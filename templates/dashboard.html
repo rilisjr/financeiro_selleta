@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Nik0 Finance | Dashboard </title>
+    <title> Selleta Financeiro | Dashboard </title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,7 +16,7 @@
 <body>
     <div class="barraNavegacao">
         <div class="conteiner_logo">
-            <img src="{{ url_for('static', filename='images/logo_nik0.png') }}" id="logo_projeto">
+            <img src="{{ url_for('static', filename='images/logo_selleta.png') }}" id="logo_projeto">
         </div>
         <div class="conteiner_botao">
             <a href="{{ url_for('gestao_usuarios') }}" id="link_gestao_usuarios">USUÁRIOS</a>
@@ -130,11 +130,11 @@
                             <td>{{ 'R${:,.2f}'.format(transacao[4])|replace(',', '@')|replace('.', ',')|replace('@', '.') }}</td>
                             <td>{{ transacao[5] }}</td>
                             <td>
-                                <button id="botao_editar" type="button" onclick="mostrarPopup({{ transacao[0] }})">Editar</button>
+                                <button class="botao_editar" type="button" onclick="mostrarPopup({{ transacao[0] }})">Editar</button>
 
                                 <form class="excluir-form" action="{{ url_for('excluir_transacao', transacao_id=transacao[0]) }}" method="post" data-id="{{ transacao[0] }}">
                                     <input type="hidden" name="_method" value="DELETE">
-                                    <button id="botao_excluir" type="submit">Excluir</button>
+                                    <button class="botao_excluir" type="submit">Excluir</button>
                                 </form>
                             </td>
                         </tr>
@@ -164,10 +164,10 @@
                             <td>{{ 'R${:,.2f}'.format(transacao[4])|replace(',', '@')|replace('.', ',')|replace('@', '.') }}</td>
                             <td>{{ transacao[5] }}</td>
                             <td>
-                                <button id="botao_editar" type="button" onclick="mostrarPopup({{ transacao[0] }})">Editar</button>
+                                <button class="botao_editar" type="button" onclick="mostrarPopup({{ transacao[0] }})">Editar</button>
                                 <form class="excluir-form" action="{{ url_for('excluir_transacao', transacao_id=transacao[0]) }}" method="post" data-id="{{ transacao[0] }}">
                                     <input type="hidden" name="_method" value="DELETE">
-                                    <button id="botao_excluir" type="submit">Excluir</button>
+                                    <button class="botao_excluir" type="submit">Excluir</button>
                                 </form>
                             </td>
                         </tr>

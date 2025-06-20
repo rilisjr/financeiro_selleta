@@ -3,7 +3,7 @@ body {
 }
 
 .barraNavegacao {
-    background-color: rgb(0, 0, 0); /* Cor de fundo da barra de navegação */
+    background-color: rgb(155, 154, 154); /* Cor de fundo da barra de navegação */
     padding: 20px; /* Espaçamento interno */
     display: flex;
     justify-content: space-between;
@@ -16,7 +16,8 @@ body {
 }
 
 #logo_projeto {
-    max-width: 200px; 
+    max-width: 100px; 
+    height: auto;
 }
 
 .conteiner_botao {
@@ -337,13 +338,13 @@ tr:nth-child(even) {
 }
 
 
-#botao_excluir:hover {
+.botao_excluir:hover {
     background-color: #3c3c3c;
 }
 
 
-#botao_editar,
-#botao_excluir,
+.botao_editar,
+.botao_excluir,
 #botao_filtrar {
     width: 80px;
     cursor: pointer;  
@@ -358,11 +359,11 @@ tr:nth-child(even) {
     background: #000000;
 }
 
-#botao_editar {
+.botao_editar {
     margin-bottom: 10px;
     background-color: rgb(255, 166, 0);
 }
-#botao_editar:hover {
+.botao_editar:hover {
     background-color: rgb(231, 150, 0);
 }
 
