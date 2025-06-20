@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(python:*)",
+      "Bash(pip3 install:*)",
+      "Bash(pip3:*)",
+      "Bash(sqlite3:*)",
+      "Bash(sudo apt:*)",
+      "Bash(sudo apt install:*)",
+      "Bash(/home/rilis/.local/bin/pyinstaller --version)",
+      "Bash(/home/rilis/.local/bin/pyinstaller --onefile --add-data \"templates:templates\" --add-data \"static:static\" --name \"Nik0Finance\" nik0_finance_exe.py)",
+      "Bash(ls:*)",
+      "Bash(mv:*)"
+    ],
+    "deny": []
+  }
+}
