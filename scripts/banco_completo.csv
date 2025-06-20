@@ -1,0 +1,16 @@
+id;username;senha
+1;rilis;scrypt:32768:8:1$Wsph7wKmVD2O9SsE$217e3178b6a29747ff3072da02ae7b27a4ea58948bbb0d992988b8f9004576a5d877d74a3ab844e045c0466b0bbb160be61aa85111cdbb6970a59d309066ed51
+
+
+=== TABELA: TRANSACOES ===
+id;origem;descricao;tipo;valor;modelo;data
+1;origem;descricao1;Fixo;123.0;Custo;2025-06-20
+2;origem;descricao13;Fixo;1223.0;Custo;2025-06-20
+3;origem;descricao;Fixo;999.0;Custo;2025-06-20
+4;origem;descricao;Fixo;999.0;Custo;2025-06-20
+5;origem;descricao;Fixo;999.0;Custo;2025-06-20
+6;origem;descricao;Fixo;999.0;Custo;2025-06-20
+7;origem;descricao;Fixo;999.0;Custo;2025-06-20
+8;origem;descricao;Fixo;999.0;Custo;2025-06-20
+9;origem;descricao;Fixo;999.0;Custo;2025-06-20
+
