@@ -1,0 +1,133 @@
+﻿id,centro_custo,empresa,tipologia,categoria
+1,Administrativo Selleta 43,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Administrativo,nativo
+2,Leonardo Zem - Galeria Comercial - SEL 43,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+3,BMG - Vila Bela - SEL 43,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+4,Residencial Jacaranda 4° Etapa,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Empreendimento,dependente
+5,Residencial Jacaranda 1° Etapa,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Empreendimento,dependente
+6,Residência Pistori,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+7,Enel Alto Araguaia,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,dependente
+8,Galeria 02,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,dependente
+9,Residencial Ipes,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Empreendimento,dependente
+10,Galeria Marechal,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+11,Empresa pre moldado,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Administrativo,dependente
+12,MT DIESEL - SEL 43,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Não definido,nativo
+13,Multifamiliar Heloisa,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,dependente
+14,Canelas,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Empreendimento,dependente
+15,Multifamiliar Luciene,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+16,Residencial Jacaranda 3° Etapa,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Empreendimento,dependente
+17,Residencial Jatoba,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Empreendimento,dependente
+18,Sede,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Administrativo,genérico
+19,Hospital Otorrino,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+20,MC Mangueira Heloisa,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+21,Obra Brava,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+22,Batalhão Ribeirao do Lipa,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+23,Gilberto Bessane,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,dependente
+24,Enel PCH Culuene - Paranatinga - SEL 43,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+25,Residencial Jacaranda 2° Etapa,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Empreendimento,dependente
+26,Francisco,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,dependente
+27,Gaivotas,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+28,Marmogil,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+29,Farmacia Americana,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+30,Heloisa Casa das Tintas - SEL 43,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Não definido,nativo
+31,4x AP Emerson - SEL 43,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+32,Administrativo Estrutura,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Administrativo,nativo
+33,Enel PCH Poxoreo,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+34,2X AP Heloisa - SELLETA 43,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+35,Residencial Michelli e Italo,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+36,Intervenção escada Valdemir - SEL 43,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+37,Obra Enel - Reforma Casca III,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+38,RLS implantação,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Administrativo,nativo
+39,Administrato Tapurah - SEL 43,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Não definido,nativo
+40,Reforma Blow,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+41,Obra Enel - Drenagem,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+42,Galeria 1,1 - SELLETA ARQUITETURA E CONSTRUCAO LTDA,Obra Privada,nativo
+43,Residencial Jatoba,2 - JNRR CONSTRUÇÃO LTDA,Obra Empreendimento,dependente
+44,Residencial Ipes,2 - JNRR CONSTRUÇÃO LTDA,Obra Empreendimento,dependente
+45,Administrativo JNRR,2 - JNRR CONSTRUÇÃO LTDA,Administrativo,nativo
+46,Residencial Jacaranda 4° Etapa,2 - JNRR CONSTRUÇÃO LTDA,Obra Empreendimento,nativo
+47,Leonardo Zem - Galeria Comercial,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,nativo
+48,Residencial Jacaranda 3° Etapa,2 - JNRR CONSTRUÇÃO LTDA,Obra Empreendimento,nativo
+49,Empresa pre moldado,2 - JNRR CONSTRUÇÃO LTDA,Administrativo,dependente
+50,Multifamiliar Luciene,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,nativo
+51,Enel Alto Araguaia,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,dependente
+52,Residencial Jacaranda 1° Etapa,2 - JNRR CONSTRUÇÃO LTDA,Obra Empreendimento,nativo
+53,4x AP Emerson,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,nativo
+54,Marmogil,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,nativo
+55,Residencial Jacaranda 2° Etapa,2 - JNRR CONSTRUÇÃO LTDA,Obra Empreendimento,nativo
+56,Heloisa Casa das Tintas,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,nativo
+57,Intervenção escada Valdemir,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,nativo
+58,BMG - Vila Bela,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,dependente
+59,2X AP Heloisa,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,nativo
+60,Residência Pistori,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,nativo
+61,MC Mangueira Heloisa,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,nativo
+62,MT DIESEL,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,dependente
+63,Galeria Marechal,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,nativo
+64,Multifamiliar Heloisa,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,dependente
+65,Hospital Hotorrino,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,nativo
+66,Canelas,2 - JNRR CONSTRUÇÃO LTDA,Obra Empreendimento,dependente
+67,Administrativo Estrutura,2 - JNRR CONSTRUÇÃO LTDA,Administrativo,nativo
+68,Sede,2 - JNRR CONSTRUÇÃO LTDA,Administrativo,genérico
+69,NÃO USAR CADASTRO ERRADO,2 - JNRR CONSTRUÇÃO LTDA,Administrativo,nativo
+70,Helena Casa Rancho,2 - JNRR CONSTRUÇÃO LTDA,Não definido,nativo
+71,Galeria 02,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,nativo
+72,Francisco,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,dependente
+73,Batalhão Ribeirao do Lipa,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,nativo
+74,Gilberto Bessane,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,dependente
+75,Enel PCH Culuene - Paranatinga,2 - JNRR CONSTRUÇÃO LTDA,Obra Privada,nativo
+76,MT DIESEL,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,nativo
+77,BMG - Vila Bela,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,dependente
+78,Administrativo Selleta 21,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Administrativo,nativo
+79,Enel PCH Culuene - Paranatinga,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,nativo
+80,Enel PCH Poxoreo,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,nativo
+81,Leonardo Zem - Galeria Comercial -SEL 21,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,nativo
+82,Residência Pistori,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,nativo
+83,Canelas - SEL 21,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Empreendimento,nativo
+84,Casas Costa Verde,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Não definido,nativo
+85,Multifamiliar Heloisa,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,dependente
+86,Residencial Jatoba,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Empreendimento,dependente
+87,Residencial Jacaranda 4° Etapa,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Empreendimento,dependente
+88,Residencial Jacaranda 3° Etapa,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Empreendimento,dependente
+89,Residencial Jacaranda 1° Etapa,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Empreendimento,dependente
+90,Batalhão Ribeirao do Lipa - SEL 21,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,nativo
+91,Administrato Tapurah - SEL 21,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Não definido,nativo
+92,4x AP Emerson - SEL 21,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Não definido,nativo
+93,Obra Enel - Reforma Casca III,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,nativo
+94,Galeria 02,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,dependente
+95,Multifamiliar Luciene - SEL 21,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,nativo
+96,Francisco,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,dependente
+97,Obra Clinica E-Vision,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,nativo
+98,Enel Alto Araguaia,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,nativo
+99,Hospital Otorrino,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,nativo
+100,Obra Brava,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,nativo
+101,Intervenção escada Valdemir,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,nativo
+102,Sede,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Administrativo,genérico
+103,Obra Enel - Drenagem,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,nativo
+104,Empresa pre moldado,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Administrativo,dependente
+105,Gilberto Bessane,3 - SELLETA INFRAESTRUTURA E LOGÍSTICA LTDA,Obra Privada,dependente
+106,Administrativo Jatoba,4 - RESIDENCIAL JATOBA SPE LTDA,Administrativo,nativo
+107,Residencial Jatoba,4 - RESIDENCIAL JATOBA SPE LTDA,Obra Empreendimento,nativo
+108,BMG - Vila Bela - JATOBA,4 - RESIDENCIAL JATOBA SPE LTDA,Obra Privada,nativo
+109,Residencial Ipes,4 - RESIDENCIAL JATOBA SPE LTDA,Obra Empreendimento,dependente
+110,Residencial Jacaranda 4° Etapa - Jatoba SPE,4 - RESIDENCIAL JATOBA SPE LTDA,Obra Empreendimento,nativo
+111,Residência Pistori - JATOBA SPE,4 - RESIDENCIAL JATOBA SPE LTDA,Obra Privada,nativo
+112,Canelas - JATOBA SPE,4 - RESIDENCIAL JATOBA SPE LTDA,Obra Empreendimento,nativo
+113,Leonardo Zem - Galeria Comercial - jatoba,4 - RESIDENCIAL JATOBA SPE LTDA,Não definido,nativo
+114,Pre moldado Lacerda - CONTA JATOBA,4 - RESIDENCIAL JATOBA SPE LTDA,Obra Privada,nativo
+115,Galeria Marechal - JATOBA SPE,4 - RESIDENCIAL JATOBA SPE LTDA,Obra Privada,nativo
+116,Residencial Jequitiba,4 - RESIDENCIAL JATOBA SPE LTDA,Obra Empreendimento,nativo
+117,Multifamiliar Luciene - JATOBA,4 - RESIDENCIAL JATOBA SPE LTDA,Obra Privada,nativo
+118,MT DIESEL - JATOBA,4 - RESIDENCIAL JATOBA SPE LTDA,Não definido,nativo
+119,2X AP Heloisa - jatoba,4 - RESIDENCIAL JATOBA SPE LTDA,Não definido,nativo
+120,Residencial Imperial Palm,4 - RESIDENCIAL JATOBA SPE LTDA,Não definido,nativo
+121,Administrativo Estrutura,5 - S.I ESTRUTURA METALICA E PRE MOLDADO LTDA,Administrativo,nativo
+122,MT DIESEL PRE MOLDADO,5 - S.I ESTRUTURA METALICA E PRE MOLDADO LTDA,Obra Privada,nativo
+123,BMG - VILA BELA PRE MOLDADO,5 - S.I ESTRUTURA METALICA E PRE MOLDADO LTDA,Não definido,nativo
+124,Pré - Moldado - Leonardo Zem,5 - S.I ESTRUTURA METALICA E PRE MOLDADO LTDA,Obra Privada,nativo
+125,CASA ROMARIO,5 - S.I ESTRUTURA METALICA E PRE MOLDADO LTDA,Obra Privada,nativo
+126,Helena Casa Rancho,5 - S.I ESTRUTURA METALICA E PRE MOLDADO LTDA,Não definido,nativo
+127,Leonardo Zem - Galeria Comercial - ESTRUTURA,5 - S.I ESTRUTURA METALICA E PRE MOLDADO LTDA,Obra Privada,nativo
+128,ALOJAMENTO -FABRICA,5 - S.I ESTRUTURA METALICA E PRE MOLDADO LTDA,Administrativo,nativo
+129,Alojamento Vila Bela,5 - S.I ESTRUTURA METALICA E PRE MOLDADO LTDA,Não definido,nativo
+130,Administrativo RLS,6 - RLS CONTABILIDADE E CONSULTORIA EMPRESARIAL LTDA,Administrativo,nativo
+131,Administrato Tapurah,7 - SW CONSTRUÇÃO,Não definido,nativo
+132,Produção Tapurah,7 - SW CONSTRUÇÃO,Não definido,nativo

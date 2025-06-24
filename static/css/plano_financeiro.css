@@ -1,0 +1,235 @@
+/* Estilos específicos para a página de Plano Financeiro */
+
+.header_pagina {
+    padding: 20px 0;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 20px;
+}
+
+.header_pagina h1 {
+    margin: 0;
+    color: #333;
+    font-size: 24px;
+}
+
+.breadcrumb {
+    color: #666;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+.conteudo_plano_financeiro {
+    display: flex;
+    gap: 20px;
+    height: calc(100vh - 200px);
+}
+
+/* Painel Esquerdo - Árvore */
+.painel_arvore {
+    flex: 1;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.header_painel {
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.header_painel h2 {
+    margin: 0 0 15px 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.input_busca {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.arvore_container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+/* Estilos da Árvore */
+.plano_item {
+    margin: 2px 0;
+    user-select: none;
+}
+
+.plano_header {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.plano_header:hover {
+    background-color: #f5f5f5;
+}
+
+.plano_header.selecionado {
+    background-color: #e3f2fd;
+    font-weight: 500;
+}
+
+.plano_header.inativo {
+    opacity: 0.6;
+}
+
+.toggle_icon {
+    width: 20px;
+    text-align: center;
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.plano_codigo {
+    font-weight: 600;
+    margin-right: 10px;
+    color: #1976d2;
+}
+
+.plano_nome {
+    flex: 1;
+}
+
+.tipo_badge {
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 10px;
+}
+
+.tipo_receita {
+    background-color: #c8e6c9;
+    color: #2e7d32;
+}
+
+.tipo_despesa {
+    background-color: #ffcdd2;
+    color: #c62828;
+}
+
+.plano_filhos {
+    margin-left: 28px;
+    display: none;
+}
+
+.plano_filhos.expandido {
+    display: block;
+}
+
+/* Painel Direito - Formulário */
+.painel_formulario {
+    flex: 1;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+}
+
+.mensagem_vazia {
+    text-align: center;
+    color: #666;
+    padding: 60px 20px;
+}
+
+.breadcrumb_plano {
+    background-color: #f5f5f5;
+    padding: 10px 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: #666;
+}
+
+.form_group {
+    margin-bottom: 20px;
+}
+
+.form_group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #333;
+}
+
+.form_group input,
+.form_group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.input_readonly {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+}
+
+.form_actions {
+    margin-top: 30px;
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn_primary {
+    background-color: #1976d2;
+    color: white;
+}
+
+.btn_primary:hover {
+    background-color: #1565c0;
+}
+
+.btn_success {
+    background-color: #4caf50;
+    color: white;
+}
+
+.btn_success:hover {
+    background-color: #45a049;
+}
+
+.btn_secondary {
+    background-color: #757575;
+    color: white;
+}
+
+.btn_secondary:hover {
+    background-color: #616161;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .conteudo_plano_financeiro {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .painel_arvore,
+    .painel_formulario {
+        width: 100%;
+    }
+}

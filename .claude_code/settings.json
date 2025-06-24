@@ -1,0 +1,35 @@
+{
+  "claude": {
+    "allowedCommands": [
+      "*"
+    ],
+    "autoApproveReadFiles": true,
+    "autoApproveWriteFiles": true,
+    "autoApproveRunCommands": true,
+    "autoApproveEditFiles": true,
+    "enableFileDiffPreview": true,
+    "enableAutoComplete": true,
+    "confirmBeforeRunning": false,
+    "showCommandOutput": true,
+    "allowGitOperations": true,
+    "allowFileSystemAccess": true,
+    "allowNetworkAccess": true,
+    "allowedFileExtensions": [
+      "*"
+    ],
+    "maxFileSize": "10MB",
+    "enableDebugMode": false,
+    "autoSaveInterval": 60,
+    "theme": "dark",
+    "fontSize": 14,
+    "tabSize": 2,
+    "wordWrap": true,
+    "lineNumbers": true,
+    "minimap": true,
+    "formatOnSave": true,
+    "lintOnSave": true,
+    "enableTelemetry": false,
+    "enableAutoUpdate": true,
+    "language": "pt-BR"
+  }
+}

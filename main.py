@@ -7,7 +7,7 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 # Verifica se o banco de dados existe, se não, cria
-db_path = 'selleta.db'
+db_path = 'selleta_main.db'
 if not os.path.exists(db_path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -45,8 +45,8 @@ def login():
     username = request.form['username']
     password = request.form['password']
 
-    # Conecta ao banco gde dados SQLite
-    conn = sqlite3.connect('selleta.db')
+    # Conecta ao banco de dados SQLite
+    conn = sqlite3.connect('selleta_main.db')
     cursor = conn.cursor()
 
     # Obtém o hash da senha do banco de dados
@@ -82,7 +82,7 @@ def cadastro():
 
         try:
             # Conectar ao banco de dados SQLite
-            conn = sqlite3.connect('selleta.db')
+            conn = sqlite3.connect('selleta_main.db')
             cursor = conn.cursor()
 
             # Verifica se o usuário já existe
@@ -113,82 +113,22 @@ def cadastro():
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
-        flash('error', 'Você não está autenticado.' )
+        flash('error', 'Você não está autenticado.')
         return redirect(url_for('index'))
+    
     try:
-        # Conectar ao banco de dados SQLite
-        conn = sqlite3.connect('selleta.db')
-        cursor = conn.cursor()
-
-        # Obtenha os parâmetros de filtro da solicitação
-        filtro_ano = request.args.get('filtro_ano')
-        filtro_mes = request.args.get('filtro_mes')
-
-        # Construa a consulta SQL com base nos filtros
-        sql_renda = "SELECT id, origem, descricao, tipo, valor, strftime('%d/%m/%Y', data) FROM transacoes WHERE modelo='Renda'"
-        sql_custo = "SELECT id, origem, descricao, tipo, valor, strftime('%d/%m/%Y', data) FROM transacoes WHERE modelo='Custo'"
-
-        if filtro_ano and filtro_mes:
-            sql_renda += f" AND strftime('%Y-%m', data) = '{filtro_ano}-{filtro_mes}'"
-            sql_custo += f" AND strftime('%Y-%m', data) = '{filtro_ano}-{filtro_mes}'"
-
-        # Execute as consultas SQL
-        cursor.execute(sql_renda)
-        transacoes_renda = cursor.fetchall()
-
-        cursor.execute(sql_custo)
-        transacoes_custo = cursor.fetchall()
-
-         # Calcular totais de Renda
-        renda_fixa_total = sum(transacao[4] for transacao in transacoes_renda if transacao[3] == 'Fixo')
-        renda_variavel_total = sum(transacao[4] for transacao in transacoes_renda if transacao[3] == 'Variável')
-        renda_total = sum(transacao[4] for transacao in transacoes_renda)
-
-        # Calcular totais de custos
-        custo_fixo_total = sum(transacao[4] for transacao in transacoes_custo if transacao[3] == 'Fixo')
-        custo_variavel_total = sum(transacao[4] for transacao in transacoes_custo if transacao[3] == 'Variável')
-        custo_total = sum(transacao[4] for transacao in transacoes_custo)
-
-        # Calcular o valor Renda - Custos diretamente
-        renda_minus_custos = renda_total - custo_total
-
-        # Formatando os totais de Renda
-        renda_fixa_total = 'R${:,.2f}'.format(renda_fixa_total).replace(',', '@').replace('.', ',').replace('@', '.')
-        renda_variavel_total = 'R${:,.2f}'.format(renda_variavel_total).replace(',', '@').replace('.', ',').replace('@', '.')
-        renda_total = 'R${:,.2f}'.format(renda_total).replace(',', '@').replace('.', ',').replace('@', '.')
-
-        # Formatando os totais de custos
-        custo_fixo_total = 'R${:,.2f}'.format(custo_fixo_total).replace(',', '@').replace('.', ',').replace('@', '.')
-        custo_variavel_total = 'R${:,.2f}'.format(custo_variavel_total).replace(',', '@').replace('.', ',').replace('@', '.')
-        custo_total = 'R${:,.2f}'.format(custo_total).replace(',', '@').replace('.', ',').replace('@', '.')
-
-        # Formatando o resultado
-        renda_minus_custos = 'R${:,.2f}'.format(renda_minus_custos).replace(',', '@').replace('.', ',').replace('@', '.')
-
-        # Fechar a conexão com o banco de dados
-        conn.close()
-
-        return render_template('dashboard.html', 
-        transacoes_renda=transacoes_renda, 
-        renda_fixa_total=renda_fixa_total, 
-        renda_variavel_total=renda_variavel_total, 
-        renda_total=renda_total, 
-        transacoes_custo=transacoes_custo, 
-        custo_fixo_total=custo_fixo_total,
-        custo_variavel_total=custo_variavel_total,
-        custo_total=custo_total, 
-        renda_minus_custos=renda_minus_custos)
-
+        # Por enquanto, vamos retornar dados estáticos até implementarmos as novas transações
+        return render_template('dashboard_novo.html')
+        
     except Exception as e:
-        # Adicione algum código aqui para lidar com a exceção
-        flash('error', f"Erro ao carregar transações: {str(e)}")
+        flash('error', f"Erro ao carregar dashboard: {str(e)}")
         return redirect(url_for('index'))
 
 @app.route('/gestao_usuarios')
 def gestao_usuarios():
     try:
         # Conectar ao banco de dados SQLite
-        conn = sqlite3.connect('selleta.db')
+        conn = sqlite3.connect('selleta_main.db')
         cursor = conn.cursor()
 
         # Consulta para obter todos os usuários
@@ -208,7 +148,7 @@ def gestao_usuarios():
 def excluir_usuario(user_id):
     try:
         # Conectar ao banco de dados SQLite
-        conn = sqlite3.connect('selleta.db')
+        conn = sqlite3.connect('selleta_main.db')
         cursor = conn.cursor()
 
         # Verificar se o usuário está excluindo a própria conta
@@ -238,7 +178,7 @@ def excluir_usuario(user_id):
 @app.route('/obter_dados_transacao/<int:transacao_id>', methods=['GET'])
 def obter_dados_transacao(transacao_id):
     # Lógica para obter os dados da transação com base no ID
-    conn = sqlite3.connect('selleta.db')
+    conn = sqlite3.connect('selleta_main.db')
     cursor = conn.cursor()
 
     cursor.execute('SELECT * FROM transacoes WHERE id = ?', (transacao_id,))
@@ -271,7 +211,7 @@ def adicionar_transacao():
     data = request.form['data']
 
     try:
-        conn = sqlite3.connect('selleta.db')
+        conn = sqlite3.connect('selleta_main.db')
         cursor = conn.cursor()
 
         if transacao_id:
@@ -305,7 +245,7 @@ def excluir_transacao(transacao_id):
 
     try:
         # Conectar ao banco de dados SQLite
-        conn = sqlite3.connect('selleta.db')
+        conn = sqlite3.connect('selleta_main.db')
         cursor = conn.cursor()
 
         # Exclui a transação com base no ID
@@ -327,6 +267,544 @@ def logout():
     # Limpa a sessão e redireciona para a página de login
     session.clear()
     return redirect(url_for('index'))
+
+# ====== ROTAS DO PLANO FINANCEIRO ======
+@app.route('/plano_financeiro')
+def plano_financeiro():
+    if 'user_id' not in session:
+        flash('error', 'Você não está autenticado.')
+        return redirect(url_for('index'))
+    
+    return render_template('plano_financeiro.html')
+
+@app.route('/api/planos_financeiros', methods=['GET'])
+def api_listar_planos():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Buscar todos os planos ordenados por código
+        cursor.execute('''
+            SELECT id, codigo, nome, nivel, tipo, plano_pai_id, ativo
+            FROM plano_financeiro
+            ORDER BY codigo
+        ''')
+        
+        planos = []
+        for row in cursor.fetchall():
+            planos.append({
+                'id': row['id'],
+                'codigo': row['codigo'],
+                'nome': row['nome'],
+                'nivel': row['nivel'],
+                'tipo': row['tipo'],
+                'plano_pai_id': row['plano_pai_id'],
+                'ativo': row['ativo']
+            })
+        
+        conn.close()
+        return jsonify(planos)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/planos_financeiros', methods=['POST'])
+def api_criar_plano():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Validar e gerar código
+        plano_pai_id = data.get('plano_pai_id')
+        nome = data.get('nome')
+        
+        if not nome:
+            return jsonify({'error': 'Nome é obrigatório'}), 400
+        
+        # Determinar nível e tipo baseado no pai
+        if plano_pai_id:
+            cursor.execute('SELECT codigo, nivel, tipo FROM plano_financeiro WHERE id = ?', (plano_pai_id,))
+            pai = cursor.fetchone()
+            if not pai:
+                return jsonify({'error': 'Plano pai não encontrado'}), 400
+            
+            codigo_pai, nivel_pai, tipo_pai = pai
+            nivel = nivel_pai + 1
+            tipo = tipo_pai
+            
+            # Gerar próximo código
+            cursor.execute('''
+                SELECT MAX(codigo) FROM plano_financeiro 
+                WHERE plano_pai_id = ? AND nivel = ?
+            ''', (plano_pai_id, nivel))
+            
+            ultimo_codigo = cursor.fetchone()[0]
+            if ultimo_codigo:
+                # Extrair último número e incrementar
+                partes = ultimo_codigo.split('.')
+                ultimo_num = int(partes[-1])
+                partes[-1] = str(ultimo_num + 1).zfill(2)
+                codigo = '.'.join(partes)
+            else:
+                # Primeiro filho
+                codigo = f"{codigo_pai}.01"
+        else:
+            # Plano de nível 1
+            nivel = 1
+            tipo = data.get('tipo', 'Ambos')
+            
+            # Gerar próximo código de nível 1
+            cursor.execute('SELECT MAX(CAST(codigo AS INTEGER)) FROM plano_financeiro WHERE nivel = 1')
+            ultimo = cursor.fetchone()[0]
+            codigo = str((ultimo or 0) + 1)
+        
+        # Inserir novo plano
+        cursor.execute('''
+            INSERT INTO plano_financeiro (codigo, nome, nivel, tipo, plano_pai_id)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (codigo, nome, nivel, tipo, plano_pai_id))
+        
+        novo_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'id': novo_id,
+            'codigo': codigo,
+            'nome': nome,
+            'nivel': nivel,
+            'tipo': tipo,
+            'plano_pai_id': plano_pai_id,
+            'ativo': True
+        }), 201
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/planos_financeiros/<int:plano_id>', methods=['PUT'])
+def api_atualizar_plano(plano_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        data = request.get_json()
+        nome = data.get('nome')
+        ativo = data.get('ativo')
+        
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Verificar se existe
+        cursor.execute('SELECT id FROM plano_financeiro WHERE id = ?', (plano_id,))
+        if not cursor.fetchone():
+            return jsonify({'error': 'Plano não encontrado'}), 404
+        
+        # Se desativando, verificar se tem filhos ativos
+        if ativo == False:
+            cursor.execute('''
+                SELECT COUNT(*) FROM plano_financeiro 
+                WHERE plano_pai_id = ? AND ativo = 1
+            ''', (plano_id,))
+            if cursor.fetchone()[0] > 0:
+                return jsonify({'error': 'Não pode desativar plano com filhos ativos'}), 400
+        
+        # Atualizar
+        updates = []
+        params = []
+        
+        if nome is not None:
+            updates.append('nome = ?')
+            params.append(nome)
+        
+        if ativo is not None:
+            updates.append('ativo = ?')
+            params.append(ativo)
+        
+        if updates:
+            params.append(plano_id)
+            cursor.execute(f'''
+                UPDATE plano_financeiro 
+                SET {', '.join(updates)}, atualizado_em = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ''', params)
+            
+            conn.commit()
+        
+        conn.close()
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ====== ROTAS DE EMPRESAS ======
+@app.route('/empresas')
+def empresas():
+    if 'user_id' not in session:
+        flash('error', 'Você não está autenticado.')
+        return redirect(url_for('index'))
+    
+    return render_template('empresas.html')
+
+@app.route('/api/empresas', methods=['GET'])
+def api_listar_empresas():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Buscar todas as empresas ordenadas por código
+        cursor.execute('''
+            SELECT id, codigo, nome, grupo, cnpj, endereco, municipio, cep, telefone, ativo
+            FROM empresas
+            ORDER BY codigo
+        ''')
+        
+        empresas = []
+        for row in cursor.fetchall():
+            empresas.append({
+                'id': row['id'],
+                'codigo': row['codigo'],
+                'nome': row['nome'],
+                'grupo': row['grupo'],
+                'cnpj': row['cnpj'],
+                'endereco': row['endereco'],
+                'municipio': row['municipio'],
+                'cep': row['cep'],
+                'telefone': row['telefone'],
+                'ativo': row['ativo']
+            })
+        
+        conn.close()
+        return jsonify(empresas)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/empresas', methods=['POST'])
+def api_criar_empresa():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Validações
+        codigo = data.get('codigo', '').strip()
+        nome = data.get('nome', '').strip()
+        
+        if not codigo or not nome:
+            return jsonify({'error': 'Código e nome são obrigatórios'}), 400
+        
+        # Verificar se código já existe
+        cursor.execute('SELECT id FROM empresas WHERE codigo = ?', (codigo,))
+        if cursor.fetchone():
+            return jsonify({'error': 'Código já existe'}), 400
+        
+        # Inserir nova empresa
+        cursor.execute('''
+            INSERT INTO empresas (codigo, nome, grupo, cnpj, endereco, municipio, cep, telefone, ativo)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            codigo,
+            nome,
+            data.get('grupo', 'Grupo Selleta'),
+            data.get('cnpj', ''),
+            data.get('endereco', ''),
+            data.get('municipio', ''),
+            data.get('cep', ''),
+            data.get('telefone', ''),
+            data.get('ativo', 1)
+        ))
+        
+        novo_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'id': novo_id,
+            'codigo': codigo,
+            'nome': nome,
+            'grupo': data.get('grupo', 'Grupo Selleta'),
+            'cnpj': data.get('cnpj', ''),
+            'endereco': data.get('endereco', ''),
+            'municipio': data.get('municipio', ''),
+            'cep': data.get('cep', ''),
+            'telefone': data.get('telefone', ''),
+            'ativo': data.get('ativo', 1)
+        }), 201
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/empresas/<int:empresa_id>', methods=['PUT'])
+def api_atualizar_empresa(empresa_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Verificar se existe
+        cursor.execute('SELECT id FROM empresas WHERE id = ?', (empresa_id,))
+        if not cursor.fetchone():
+            return jsonify({'error': 'Empresa não encontrada'}), 404
+        
+        # Verificar se código é único (se alterado)
+        if 'codigo' in data:
+            cursor.execute('SELECT id FROM empresas WHERE codigo = ? AND id != ?', (data['codigo'], empresa_id))
+            if cursor.fetchone():
+                return jsonify({'error': 'Código já existe para outra empresa'}), 400
+        
+        # Atualizar campos
+        updates = []
+        params = []
+        
+        for field in ['codigo', 'nome', 'grupo', 'cnpj', 'endereco', 'municipio', 'cep', 'telefone', 'ativo']:
+            if field in data:
+                updates.append(f'{field} = ?')
+                params.append(data[field])
+        
+        if updates:
+            params.append(empresa_id)
+            cursor.execute(f'''
+                UPDATE empresas 
+                SET {', '.join(updates)}, data_atualizacao = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ''', params)
+            
+            conn.commit()
+        
+        conn.close()
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ====== ROTAS DE CENTRO DE CUSTO ======
+@app.route('/centro_custo')
+def centro_custo():
+    if 'user_id' not in session:
+        flash('error', 'Você não está autenticado.')
+        return redirect(url_for('index'))
+    
+    return render_template('centro_custo.html')
+
+@app.route('/api/centros_custo', methods=['GET'])
+def api_listar_centros_custo():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Buscar centros de custo com informações da empresa
+        cursor.execute('''
+            SELECT cc.id, cc.centro_custo_original, cc.mascara_cc, 
+                   cc.tipologia, cc.categoria, cc.descricao, cc.ativo,
+                   e.codigo as empresa_codigo, e.nome as empresa_nome
+            FROM centros_custo cc
+            JOIN empresas e ON cc.empresa_id = e.id
+            ORDER BY cc.mascara_cc
+        ''')
+        
+        centros = []
+        for row in cursor.fetchall():
+            centros.append({
+                'id': row['id'],
+                'centro_custo_original': row['centro_custo_original'],
+                'mascara_cc': row['mascara_cc'],
+                'tipologia': row['tipologia'],
+                'categoria': row['categoria'],
+                'descricao': row['descricao'],
+                'ativo': row['ativo'],
+                'empresa_codigo': row['empresa_codigo'],
+                'empresa_nome': row['empresa_nome']
+            })
+        
+        conn.close()
+        return jsonify(centros)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/centros_custo', methods=['POST'])
+def api_criar_centro_custo():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Validações
+        mascara_cc = data.get('mascara_cc', '').strip()
+        empresa_id = data.get('empresa_id')
+        tipologia = data.get('tipologia', 'Obra Privada')
+        categoria = data.get('categoria', 'nativo')
+        
+        if not mascara_cc or not empresa_id:
+            return jsonify({'error': 'Máscara CC e empresa são obrigatórios'}), 400
+        
+        # Verificar se empresa existe
+        cursor.execute('SELECT id FROM empresas WHERE id = ?', (empresa_id,))
+        if not cursor.fetchone():
+            return jsonify({'error': 'Empresa não encontrada'}), 400
+        
+        # Inserir novo centro de custo
+        centro_custo_original = data.get('centro_custo_original', mascara_cc)
+        descricao = data.get('descricao', f"Centro de custo {tipologia.lower()} - {categoria}")
+        
+        cursor.execute('''
+            INSERT INTO centros_custo (centro_custo_original, mascara_cc, empresa_id, 
+                                     tipologia, categoria, descricao, ativo)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            centro_custo_original,
+            mascara_cc,
+            empresa_id,
+            tipologia,
+            categoria,
+            descricao,
+            data.get('ativo', 1)
+        ))
+        
+        novo_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'id': novo_id,
+            'centro_custo_original': centro_custo_original,
+            'mascara_cc': mascara_cc,
+            'tipologia': tipologia,
+            'categoria': categoria,
+            'descricao': descricao,
+            'ativo': data.get('ativo', 1)
+        }), 201
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/centros_custo/<int:centro_id>', methods=['PUT'])
+def api_atualizar_centro_custo(centro_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Verificar se existe
+        cursor.execute('SELECT id FROM centros_custo WHERE id = ?', (centro_id,))
+        if not cursor.fetchone():
+            return jsonify({'error': 'Centro de custo não encontrado'}), 404
+        
+        # Atualizar campos
+        updates = []
+        params = []
+        
+        for field in ['mascara_cc', 'tipologia', 'categoria', 'descricao', 'ativo']:
+            if field in data:
+                updates.append(f'{field} = ?')
+                params.append(data[field])
+        
+        if updates:
+            params.append(centro_id)
+            cursor.execute(f'''
+                UPDATE centros_custo 
+                SET {', '.join(updates)}, data_atualizacao = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ''', params)
+            
+            conn.commit()
+        
+        conn.close()
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ====== ROTAS FUTURAS (PLACEHOLDER) ======
+
+@app.route('/clientes_fornecedores')
+def clientes_fornecedores():
+    if 'user_id' not in session:
+        flash('error', 'Você não está autenticado.')
+        return redirect(url_for('index'))
+    flash('info', 'Clientes/Fornecedores - Em desenvolvimento')
+    return redirect(url_for('dashboard'))
+
+@app.route('/conta_bancaria')
+def conta_bancaria():
+    if 'user_id' not in session:
+        flash('error', 'Você não está autenticado.')
+        return redirect(url_for('index'))
+    flash('info', 'Contas Bancárias - Em desenvolvimento')
+    return redirect(url_for('dashboard'))
+
+@app.route('/transacoes')
+def transacoes():
+    if 'user_id' not in session:
+        flash('error', 'Você não está autenticado.')
+        return redirect(url_for('index'))
+    flash('info', 'Gestão de Transações - Em desenvolvimento')
+    return redirect(url_for('dashboard'))
+
+@app.route('/nova_transacao')
+def nova_transacao():
+    if 'user_id' not in session:
+        flash('error', 'Você não está autenticado.')
+        return redirect(url_for('index'))
+    flash('info', 'Nova Transação - Em desenvolvimento')
+    return redirect(url_for('dashboard'))
+
+@app.route('/contas_pagar')
+def contas_pagar():
+    if 'user_id' not in session:
+        flash('error', 'Você não está autenticado.')
+        return redirect(url_for('index'))
+    flash('info', 'Contas a Pagar - Em desenvolvimento')
+    return redirect(url_for('dashboard'))
+
+@app.route('/contas_receber')
+def contas_receber():
+    if 'user_id' not in session:
+        flash('error', 'Você não está autenticado.')
+        return redirect(url_for('index'))
+    flash('info', 'Contas a Receber - Em desenvolvimento')
+    return redirect(url_for('dashboard'))
+
+@app.route('/relatorios')
+def relatorios():
+    if 'user_id' not in session:
+        flash('error', 'Você não está autenticado.')
+        return redirect(url_for('index'))
+    flash('info', 'Relatórios - Em desenvolvimento')
+    return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
     app.run(debug=True)
