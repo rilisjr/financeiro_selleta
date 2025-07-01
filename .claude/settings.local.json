@@ -12,7 +12,22 @@
       "Bash(/home/rilis/.local/bin/pyinstaller --onefile --add-data \"templates:templates\" --add-data \"static:static\" --name \"Nik0Finance\" nik0_finance_exe.py)",
       "Bash(ls:*)",
       "Bash(mv:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(timeout 300 python3 deteccao_fuzzy_aprimorada_completa.py)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(timeout:*)",
+      "Bash(node:*)",
+      "Bash(rm:*)",
+      "Bash(pkill:*)",
+      "Bash(true)",
+      "Bash(cut:*)",
+      "Bash(find:*)",
+      "Bash(sed:*)",
+      "Bash(curl:*)",
+      "Bash(touch:*)",
+      "Bash(cp:*)",
+      "Bash(echo:*)"
     ],
     "deny": []
   }

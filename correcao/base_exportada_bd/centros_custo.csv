@@ -1,0 +1,134 @@
+id,centro_custo_original,mascara_cc,empresa_id,tipologia,categoria,descricao,ativo,data_criacao,data_atualizacao
+68,Administrativo Selleta 43,Administrativo,1,Administrativo,nativo,Centro de custo administrativo - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+69,Leonardo Zem - Galeria Comercial - SEL 43,Leonardo Zem - Galeria Comercial,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+70,BMG - Vila Bela - SEL 43,BMG - Vila Bela,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+71,Residencial Jacaranda 4° Etapa,Residencial Jacaranda 4° Etapa,1,Obra Empreendimento,dependente,Centro de custo obra empreendimento - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+72,Residencial Jacaranda 1° Etapa,Residencial Jacaranda 1° Etapa,1,Obra Empreendimento,dependente,Centro de custo obra empreendimento - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+73,Residência Pistori,Residência Pistori,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+74,Enel Alto Araguaia,Enel Alto Araguaia,1,Obra Privada,dependente,Centro de custo obra privada - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+75,Galeria 02,Galeria 02,1,Obra Privada,dependente,Centro de custo obra privada - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+76,Residencial Ipes,Residencial Ipes,1,Obra Empreendimento,dependente,Centro de custo obra empreendimento - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+77,Galeria Marechal,Galeria Marechal,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+78,Empresa pre moldado,Administrativo Pré-Moldado,1,Administrativo,dependente,Centro de custo administrativo - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+79,MT DIESEL - SEL 43,MT DIESEL,1,Não definido,nativo,Centro de custo não definido - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+80,Multifamiliar Heloisa,Multifamiliar Heloisa,1,Obra Privada,dependente,Centro de custo obra privada - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+81,Canelas,Canelas,1,Obra Empreendimento,dependente,Centro de custo obra empreendimento - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+82,Multifamiliar Luciene,Multifamiliar Luciene,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+83,Residencial Jacaranda 3° Etapa,Residencial Jacaranda 3° Etapa,1,Obra Empreendimento,dependente,Centro de custo obra empreendimento - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+84,Residencial Jatoba,Residencial Jatoba,1,Obra Empreendimento,dependente,Centro de custo obra empreendimento - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+85,Sede,Sede,1,Administrativo,genérico,Centro de custo administrativo - genérico,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+86,Hospital Otorrino,Hospital Otorrino,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+87,MC Mangueira Heloisa,MC Mangueira Heloisa,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+88,Obra Brava,Obra Brava,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+89,Batalhão Ribeirao do Lipa,Batalhão Ribeirao do Lipa,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+90,Gilberto Bessane,Gilberto Bessane,1,Obra Privada,dependente,Centro de custo obra privada - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+91,Enel PCH Culuene - Paranatinga - SEL 43,Enel PCH Culuene - Paranatinga,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+92,Residencial Jacaranda 2° Etapa,Residencial Jacaranda 2° Etapa,1,Obra Empreendimento,dependente,Centro de custo obra empreendimento - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+93,Francisco,Francisco,1,Obra Privada,dependente,Centro de custo obra privada - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+94,Gaivotas,Gaivotas,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+95,Marmogil,Marmogil,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+96,Farmacia Americana,Farmacia Americana,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+97,Heloisa Casa das Tintas - SEL 43,Heloisa Casa das Tintas,1,Não definido,nativo,Centro de custo não definido - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+98,4x AP Emerson - SEL 43,4x AP Emerson,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+99,Administrativo Estrutura,Administrativo,1,Administrativo,nativo,Centro de custo administrativo - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+100,Enel PCH Poxoreo,Enel PCH Poxoreo,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+101,2X AP Heloisa - SELLETA 43,2X AP Heloisa,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+102,Residencial Michelli e Italo,Residencial Michelli e Italo,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+103,Intervenção escada Valdemir - SEL 43,Intervenção escada Valdemir,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+104,Obra Enel - Reforma Casca III,Obra Enel - Reforma Casca III,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+105,RLS implantação,Administrativo RLS Implantação,1,Administrativo,nativo,Centro de custo administrativo - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+106,Administrato Tapurah - SEL 43,Administrativo Tapurah,1,Não definido,nativo,Centro de custo não definido - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+107,Reforma Blow,Reforma Blow,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+108,Obra Enel - Drenagem,Obra Enel - Drenagem,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+109,Galeria 1,Galeria 1,1,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+110,Residencial Jatoba,Residencial Jatoba,2,Obra Empreendimento,dependente,Centro de custo obra empreendimento - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+111,Residencial Ipes,Residencial Ipes,2,Obra Empreendimento,dependente,Centro de custo obra empreendimento - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+112,Administrativo JNRR,Administrativo,2,Administrativo,nativo,Centro de custo administrativo - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+113,Residencial Jacaranda 4° Etapa,Residencial Jacaranda 4° Etapa,2,Obra Empreendimento,nativo,Centro de custo obra empreendimento - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+114,Leonardo Zem - Galeria Comercial,Leonardo Zem - Galeria Comercial,2,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+115,Residencial Jacaranda 3° Etapa,Residencial Jacaranda 3° Etapa,2,Obra Empreendimento,nativo,Centro de custo obra empreendimento - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+116,Empresa pre moldado,Administrativo Pré-Moldado,2,Administrativo,dependente,Centro de custo administrativo - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+117,Multifamiliar Luciene,Multifamiliar Luciene,2,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+118,Enel Alto Araguaia,Enel Alto Araguaia,2,Obra Privada,dependente,Centro de custo obra privada - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+119,Residencial Jacaranda 1° Etapa,Residencial Jacaranda 1° Etapa,2,Obra Empreendimento,nativo,Centro de custo obra empreendimento - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+120,4x AP Emerson,4x AP Emerson,2,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+121,Marmogil,Marmogil,2,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+122,Residencial Jacaranda 2° Etapa,Residencial Jacaranda 2° Etapa,2,Obra Empreendimento,nativo,Centro de custo obra empreendimento - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+123,Heloisa Casa das Tintas,Heloisa Casa das Tintas,2,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+124,Intervenção escada Valdemir,Intervenção escada Valdemir,2,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+125,BMG - Vila Bela,BMG - Vila Bela,2,Obra Privada,dependente,Centro de custo obra privada - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+126,2X AP Heloisa,2X AP Heloisa,2,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+127,Residência Pistori,Residência Pistori,2,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+128,MC Mangueira Heloisa,MC Mangueira Heloisa,2,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+129,MT DIESEL,MT DIESEL,2,Obra Privada,dependente,Centro de custo obra privada - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+130,Galeria Marechal,Galeria Marechal,2,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+131,Multifamiliar Heloisa,Multifamiliar Heloisa,2,Obra Privada,dependente,Centro de custo obra privada - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+132,Hospital Hotorrino,Hospital Hotorrino,2,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+133,Canelas,Canelas,2,Obra Empreendimento,dependente,Centro de custo obra empreendimento - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+134,Administrativo Estrutura,Administrativo,2,Administrativo,nativo,Centro de custo administrativo - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+135,Sede,Sede,2,Administrativo,genérico,Centro de custo administrativo - genérico,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+136,NÃO USAR CADASTRO ERRADO,NÃO USAR CADASTRO ERRADO,2,Administrativo,nativo,Centro de custo administrativo - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+137,Helena Casa Rancho,Helena Casa Rancho,2,Não definido,nativo,Centro de custo não definido - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+138,Galeria 02,Galeria 02,2,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+139,Francisco,Francisco,2,Obra Privada,dependente,Centro de custo obra privada - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+140,Batalhão Ribeirao do Lipa,Batalhão Ribeirao do Lipa,2,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+141,Gilberto Bessane,Gilberto Bessane,2,Obra Privada,dependente,Centro de custo obra privada - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+142,Enel PCH Culuene - Paranatinga,Enel PCH Culuene - Paranatinga,2,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+143,MT DIESEL,MT DIESEL,3,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+144,BMG - Vila Bela,BMG - Vila Bela,3,Obra Privada,dependente,Centro de custo obra privada - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+145,Administrativo Selleta 21,Administrativo,3,Administrativo,nativo,Centro de custo administrativo - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+146,Enel PCH Culuene - Paranatinga,Enel PCH Culuene - Paranatinga,3,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+147,Enel PCH Poxoreo,Enel PCH Poxoreo,3,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+148,Leonardo Zem - Galeria Comercial -SEL 21,Leonardo Zem - Galeria Comercial,3,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+149,Residência Pistori,Residência Pistori,3,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+150,Canelas - SEL 21,Canelas,3,Obra Empreendimento,nativo,Centro de custo obra empreendimento - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+151,Casas Costa Verde,Casas Costa Verde,3,Não definido,nativo,Centro de custo não definido - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+152,Multifamiliar Heloisa,Multifamiliar Heloisa,3,Obra Privada,dependente,Centro de custo obra privada - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+153,Residencial Jatoba,Residencial Jatoba,3,Obra Empreendimento,dependente,Centro de custo obra empreendimento - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+154,Residencial Jacaranda 4° Etapa,Residencial Jacaranda 4° Etapa,3,Obra Empreendimento,dependente,Centro de custo obra empreendimento - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+155,Residencial Jacaranda 3° Etapa,Residencial Jacaranda 3° Etapa,3,Obra Empreendimento,dependente,Centro de custo obra empreendimento - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+156,Residencial Jacaranda 1° Etapa,Residencial Jacaranda 1° Etapa,3,Obra Empreendimento,dependente,Centro de custo obra empreendimento - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+157,Batalhão Ribeirao do Lipa - SEL 21,Batalhão Ribeirao do Lipa,3,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+158,Administrato Tapurah - SEL 21,Administrativo Tapurah,3,Não definido,nativo,Centro de custo não definido - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+159,4x AP Emerson - SEL 21,4x AP Emerson,3,Não definido,nativo,Centro de custo não definido - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+160,Obra Enel - Reforma Casca III,Obra Enel - Reforma Casca III,3,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+161,Galeria 02,Galeria 02,3,Obra Privada,dependente,Centro de custo obra privada - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+162,Multifamiliar Luciene - SEL 21,Multifamiliar Luciene,3,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+163,Francisco,Francisco,3,Obra Privada,dependente,Centro de custo obra privada - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+164,Obra Clinica E-Vision,Obra Clinica E-Vision,3,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+165,Enel Alto Araguaia,Enel Alto Araguaia,3,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+166,Hospital Otorrino,Hospital Otorrino,3,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+167,Obra Brava,Obra Brava,3,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+168,Intervenção escada Valdemir,Intervenção escada Valdemir,3,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+169,Sede,Sede,3,Administrativo,genérico,Centro de custo administrativo - genérico,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+170,Obra Enel - Drenagem,Obra Enel - Drenagem,3,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+171,Empresa pre moldado,Administrativo Pré-Moldado,3,Administrativo,dependente,Centro de custo administrativo - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+172,Gilberto Bessane,Gilberto Bessane,3,Obra Privada,dependente,Centro de custo obra privada - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+173,Administrativo Jatoba,Administrativo,4,Administrativo,nativo,Centro de custo administrativo - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+174,Residencial Jatoba,Residencial Jatoba,4,Obra Empreendimento,nativo,Centro de custo obra empreendimento - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+175,BMG - Vila Bela - JATOBA,BMG - Vila Bela,4,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+176,Residencial Ipes,Residencial Ipes,4,Obra Empreendimento,dependente,Centro de custo obra empreendimento - dependente,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+177,Residencial Jacaranda 4° Etapa - Jatoba SPE,Residencial Jacaranda 4° Etapa - Jatoba SPE,4,Obra Empreendimento,nativo,Centro de custo obra empreendimento - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+178,Residência Pistori - JATOBA SPE,Residência Pistori,4,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+179,Canelas - JATOBA SPE,Canelas,4,Obra Empreendimento,nativo,Centro de custo obra empreendimento - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+180,Leonardo Zem - Galeria Comercial - jatoba,Leonardo Zem - Galeria Comercial,4,Não definido,nativo,Centro de custo não definido - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+181,Pre moldado Lacerda - CONTA JATOBA,Pre moldado Lacerda,4,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+182,Galeria Marechal - JATOBA SPE,Galeria Marechal,4,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+183,Residencial Jequitiba,Residencial Jequitiba,4,Obra Empreendimento,nativo,Centro de custo obra empreendimento - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+184,Multifamiliar Luciene - JATOBA,Multifamiliar Luciene,4,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+185,MT DIESEL - JATOBA,MT DIESEL,4,Não definido,nativo,Centro de custo não definido - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+186,2X AP Heloisa - jatoba,2X AP Heloisa,4,Não definido,nativo,Centro de custo não definido - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+187,Residencial Imperial Palm,Residencial Imperial Palm,4,Não definido,nativo,Centro de custo não definido - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+188,Administrativo Estrutura,Administrativo,5,Administrativo,nativo,Centro de custo administrativo - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+189,MT DIESEL PRE MOLDADO,MT DIESEL,5,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+190,BMG - VILA BELA PRE MOLDADO,BMG - VILA BELA,5,Não definido,nativo,Centro de custo não definido - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+191,Pré - Moldado - Leonardo Zem,Pré - Moldado - Leonardo Zem,5,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+192,CASA ROMARIO,CASA ROMARIO,5,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+193,Helena Casa Rancho,Helena Casa Rancho,5,Não definido,nativo,Centro de custo não definido - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+194,Leonardo Zem - Galeria Comercial - ESTRUTURA,Leonardo Zem - Galeria Comercial,5,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+195,ALOJAMENTO -FABRICA,Administrativo Alojamento,5,Administrativo,nativo,Centro de custo administrativo - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+196,Alojamento Vila Bela,Alojamento Vila Bela,5,Não definido,nativo,Centro de custo não definido - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+197,Administrativo RLS,Administrativo,6,Administrativo,nativo,Centro de custo administrativo - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+198,Administrato Tapurah,Administrativo Tapurah,7,Não definido,nativo,Centro de custo não definido - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+199,Produção Tapurah,Produção Tapurah,7,Não definido,nativo,Centro de custo não definido - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32
+200,ALMOXARIFADO - BMG,ALMOXARIFADO - BMG,4,Obra Privada,nativo,Centro de custo obra privada - nativo,1,2025-06-24 21:15:32,2025-06-24 21:15:32

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Selleta Financeiro{% endblock %}</title>
+    
+    <!-- CSS Base -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_novo.css') }}">
+    {% block extra_css %}{% endblock %}
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <img src="{{ url_for('static', filename='images/logo_selleta.png') }}" alt="Selleta" class="logo">
+                <h1>Sistema Financeiro</h1>
+            </div>
+            
+            <div class="header-actions">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Pesquise uma funcionalidade...">
+                </div>
+                
+                <div class="user-menu">
+                    <div class="notification-bell">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">3</span>
+                    </div>
+                    
+                    <div class="user-avatar">
+                        <i class="fas fa-user-circle"></i>
+                        <span>Usuário</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    
+                    <div class="dropdown-menu">
+                        <a href="#"><i class="fas fa-user"></i> Meu Perfil</a>
+                        <a href="#"><i class="fas fa-cog"></i> Configurações</a>
+                        <hr>
+                        <form action="{{ url_for('logout') }}" method="POST" class="logout-form">
+                            <button type="submit"><i class="fas fa-sign-out-alt"></i> Sair</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="main-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <!-- Dashboard -->
+                <div class="nav-section">
+                    <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+
+                <!-- Cadastros -->
+                <div class="nav-section {% if request.endpoint in ['plano_financeiro', 'empresas', 'centro_custo', 'fornecedores', 'clientes_fornecedores', 'conta_bancaria'] %}open{% endif %}">
+                    <div class="nav-section-title">
+                        <i class="fas fa-folder"></i>
+                        <span>Cadastros</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="nav-subsection" {% if request.endpoint in ['plano_financeiro', 'empresas', 'centro_custo', 'fornecedores', 'clientes_fornecedores', 'conta_bancaria'] %}style="display: block;"{% endif %}>
+                        <a href="{{ url_for('plano_financeiro') }}" class="nav-item {% if request.endpoint == 'plano_financeiro' %}active{% endif %}">
+                            <i class="fas fa-sitemap"></i>
+                            <span>Plano Financeiro</span>
+                            <span class="badge {% if request.endpoint == 'plano_financeiro' %}primary{% else %}success{% endif %}">
+                                {% if request.endpoint == 'plano_financeiro' %}Ativo{% else %}Pronto{% endif %}
+                            </span>
+                        </a>
+                        <a href="{{ url_for('empresas') }}" class="nav-item {% if request.endpoint == 'empresas' %}active{% endif %}">
+                            <i class="fas fa-industry"></i>
+                            <span>Empresas</span>
+                            <span class="badge {% if request.endpoint == 'empresas' %}primary{% else %}success{% endif %}">
+                                {% if request.endpoint == 'empresas' %}Ativo{% else %}Pronto{% endif %}
+                            </span>
+                        </a>
+                        <a href="{{ url_for('centro_custo') }}" class="nav-item {% if request.endpoint == 'centro_custo' %}active{% endif %}">
+                            <i class="fas fa-building"></i>
+                            <span>Centro de Custo</span>
+                            <span class="badge {% if request.endpoint == 'centro_custo' %}primary{% else %}success{% endif %}">
+                                {% if request.endpoint == 'centro_custo' %}Ativo{% else %}Pronto{% endif %}
+                            </span>
+                        </a>
+                        <a href="{{ url_for('clientes_fornecedores') }}" class="nav-item {% if request.endpoint in ['fornecedores', 'clientes_fornecedores'] %}active{% endif %}">
+                            <i class="fas fa-users"></i>
+                            <span>Clientes/Fornecedores</span>
+                            <span class="badge {% if request.endpoint in ['fornecedores', 'clientes_fornecedores'] %}primary{% else %}success{% endif %}">
+                                {% if request.endpoint in ['fornecedores', 'clientes_fornecedores'] %}Ativo{% else %}Pronto{% endif %}
+                            </span>
+                        </a>
+                        <a href="{{ url_for('conta_bancaria') }}" class="nav-item {% if request.endpoint == 'conta_bancaria' %}active{% endif %}">
+                            <i class="fas fa-university"></i>
+                            <span>Contas Bancárias</span>
+                            <span class="badge {% if request.endpoint == 'conta_bancaria' %}primary{% else %}success{% endif %}">
+                                {% if request.endpoint == 'conta_bancaria' %}Ativo{% else %}Pronto{% endif %}
+                            </span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Movimentação -->
+                <div class="nav-section {% if request.endpoint in ['nova_transacao', 'transacoes', 'contas_pagar', 'contas_receber'] %}open{% endif %}">
+                    <div class="nav-section-title">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>Movimentação</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="nav-subsection" {% if request.endpoint in ['nova_transacao', 'transacoes', 'contas_pagar', 'contas_receber'] %}style="display: block;"{% endif %}>
+                        <a href="{{ url_for('nova_transacao') }}" class="nav-item highlight {% if request.endpoint == 'nova_transacao' %}active{% endif %}">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Nova Transação</span>
+                            {% if request.endpoint == 'nova_transacao' %}
+                            <span class="badge primary">Ativo</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('transacoes') }}" class="nav-item {% if request.endpoint == 'transacoes' %}active{% endif %}">
+                            <i class="fas fa-list"></i>
+                            <span>Consultar Transações</span>
+                            <span class="badge {% if request.endpoint == 'transacoes' %}primary{% else %}success{% endif %}">
+                                {% if request.endpoint == 'transacoes' %}Ativo{% else %}Pronto{% endif %}
+                            </span>
+                        </a>
+                        <a href="{{ url_for('contas_pagar') }}" class="nav-item {% if request.endpoint == 'contas_pagar' %}active{% endif %}">
+                            <i class="fas fa-credit-card"></i>
+                            <span>Contas a Pagar</span>
+                            <span class="badge {% if request.endpoint == 'contas_pagar' %}primary{% else %}warning{% endif %}">
+                                {% if request.endpoint == 'contas_pagar' %}Ativo{% else %}Em breve{% endif %}
+                            </span>
+                        </a>
+                        <a href="{{ url_for('contas_receber') }}" class="nav-item {% if request.endpoint == 'contas_receber' %}active{% endif %}">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <span>Contas a Receber</span>
+                            <span class="badge {% if request.endpoint == 'contas_receber' %}primary{% else %}warning{% endif %}">
+                                {% if request.endpoint == 'contas_receber' %}Ativo{% else %}Em breve{% endif %}
+                            </span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Relatórios -->
+                <div class="nav-section {% if request.endpoint in ['relatorios', 'admin.relatorio_conferencia', 'admin.relatorio_dinamico'] %}open{% endif %}">
+                    <div class="nav-section-title">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Relatórios</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="nav-subsection" {% if request.endpoint in ['relatorios', 'admin.relatorio_conferencia', 'admin.relatorio_dinamico'] %}style="display: block;"{% endif %}>
+                        <a href="{{ url_for('relatorios') }}" class="nav-item {% if request.endpoint == 'relatorios' %}active{% endif %}">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Relatório Gerencial</span>
+                            <span class="badge {% if request.endpoint == 'relatorios' %}primary{% else %}warning{% endif %}">
+                                {% if request.endpoint == 'relatorios' %}Ativo{% else %}Em breve{% endif %}
+                            </span>
+                        </a>
+                        <a href="{{ url_for('admin.relatorio_conferencia') }}" class="nav-item {% if request.endpoint == 'admin.relatorio_conferencia' %}active{% endif %}">
+                            <i class="fas fa-clipboard-check"></i>
+                            <span>Conferência Plano Financeiro</span>
+                            <span class="badge {% if request.endpoint == 'admin.relatorio_conferencia' %}primary{% else %}success{% endif %}">
+                                {% if request.endpoint == 'admin.relatorio_conferencia' %}Ativo{% else %}Pronto{% endif %}
+                            </span>
+                        </a>
+                        <a href="{{ url_for('admin.relatorio_dinamico') }}" class="nav-item {% if request.endpoint == 'admin.relatorio_dinamico' %}active{% endif %}">
+                            <i class="fas fa-chart-network"></i>
+                            <span>Relatório Dinâmico</span>
+                            <span class="badge {% if request.endpoint == 'admin.relatorio_dinamico' %}primary{% else %}success{% endif %}">
+                                {% if request.endpoint == 'admin.relatorio_dinamico' %}Ativo{% else %}Pronto{% endif %}
+                            </span>
+                        </a>
+                        <a href="#" class="nav-item">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Fluxo de Caixa</span>
+                            <span class="badge warning">Em breve</span>
+                        </a>
+                        <a href="#" class="nav-item">
+                            <i class="fas fa-pie-chart"></i>
+                            <span>DRE por Centro</span>
+                            <span class="badge warning">Em breve</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Administração -->
+                <div class="nav-section {% if request.endpoint in ['gestao_usuarios', 'admin.visualizar_banco_dados', 'admin.visualizar_transacoes'] %}open{% endif %}">
+                    <div class="nav-section-title">
+                        <i class="fas fa-cogs"></i>
+                        <span>Administração</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="nav-subsection" {% if request.endpoint in ['gestao_usuarios', 'admin.visualizar_banco_dados', 'admin.visualizar_transacoes'] %}style="display: block;"{% endif %}>
+                        <a href="{{ url_for('gestao_usuarios') }}" class="nav-item {% if request.endpoint == 'gestao_usuarios' %}active{% endif %}">
+                            <i class="fas fa-user-cog"></i>
+                            <span>Gestão de Usuários</span>
+                            {% if request.endpoint == 'gestao_usuarios' %}
+                            <span class="badge primary">Ativo</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('admin.visualizar_banco_dados') }}" class="nav-item {% if request.endpoint == 'admin.visualizar_banco_dados' %}active{% endif %}">
+                            <i class="fas fa-database"></i>
+                            <span>Visualizar Banco de Dados</span>
+                            <span class="badge {% if request.endpoint == 'admin.visualizar_banco_dados' %}primary{% else %}success{% endif %}">
+                                {% if request.endpoint == 'admin.visualizar_banco_dados' %}Ativo{% else %}Pronto{% endif %}
+                            </span>
+                        </a>
+                        <a href="{{ url_for('admin.visualizar_transacoes') }}" class="nav-item {% if request.endpoint == 'admin.visualizar_transacoes' %}active{% endif %}">
+                            <i class="fas fa-table"></i>
+                            <span>Tabela de Transações</span>
+                            <span class="badge {% if request.endpoint == 'admin.visualizar_transacoes' %}primary{% else %}success{% endif %}">
+                                {% if request.endpoint == 'admin.visualizar_transacoes' %}Ativo{% else %}Pronto{% endif %}
+                            </span>
+                        </a>
+                        <a href="#" class="nav-item">
+                            <i class="fas fa-download"></i>
+                            <span>Backup/Restore</span>
+                            <span class="badge warning">Em breve</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Breadcrumb -->
+            <div class="breadcrumb">
+                <i class="fas fa-home"></i>
+                {% block breadcrumb %}
+                <span>Dashboard</span>
+                {% endblock %}
+            </div>
+
+            <!-- Content específico de cada página -->
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

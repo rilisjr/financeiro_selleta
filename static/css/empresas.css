@@ -416,6 +416,31 @@
     color: var(--selleta-white);
 }
 
+/* Animações - Seguindo padrão dos outros módulos */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.page-header,
+.filters-section,
+.empresa-card,
+.content-container {
+    animation: fadeIn 0.6s ease-out;
+}
+
+.empresa-card:nth-child(1) { animation-delay: 0.1s; }
+.empresa-card:nth-child(2) { animation-delay: 0.2s; }
+.empresa-card:nth-child(3) { animation-delay: 0.3s; }
+.empresa-card:nth-child(4) { animation-delay: 0.4s; }
+.empresa-card:nth-child(5) { animation-delay: 0.5s; }
+
 /* Responsive */
 @media (max-width: 768px) {
     .page-header {

@@ -1,7 +1,8 @@
 // Centro de Custo JavaScript - Sistema Selleta
 
 $(document).ready(function() {
-    let centrosDados = [];
+    let centrosOriginais = [];      // ✅ Dataset completo (nunca modificado)
+    let centrosDados = [];          // ✅ Dataset filtrado (para visualização)
     let empresasDados = [];
     let filtrosAtivos = {};
 
@@ -36,7 +37,8 @@ $(document).ready(function() {
         
         $.get('/api/centros_custo')
             .done(function(data) {
-                centrosDados = data;
+                centrosOriginais = data;    // ✅ Salva dataset completo
+                centrosDados = [...data];   // ✅ Copia inicial para visualização
                 aplicarFiltros();
                 atualizarKPIs();
                 ocultarLoading();
@@ -311,7 +313,8 @@ $(document).ready(function() {
         const categoria = $('#filtro-categoria').val();
         const status = $('#filtro-status').val();
         
-        let dadosFiltrados = [...centrosDados];
+        // ✅ SEMPRE partir do dataset original completo
+        let dadosFiltrados = [...centrosOriginais];
         
         // Filtro de pesquisa
         if (pesquisa) {
@@ -342,7 +345,7 @@ $(document).ready(function() {
             dadosFiltrados = dadosFiltrados.filter(centro => centro.ativo.toString() === status);
         }
         
-        // Atualizar dados exibidos
+        // ✅ Atualizar apenas dados de visualização (não sobrescreve originais)
         centrosDados = dadosFiltrados;
         
         // Re-renderizar visualização ativa
@@ -350,6 +353,51 @@ $(document).ready(function() {
         alterarVisualizacao(viewAtiva);
         
         atualizarKPIs();
+    }
+
+    // ✅ Função utilitária para limpar todos os filtros
+    function limparFiltros() {
+        $('#pesquisa-centro').val('');
+        $('#filtro-empresa').val('');
+        $('#filtro-tipologia').val('');
+        $('#filtro-categoria').val('');
+        $('#filtro-status').val('');
+        aplicarFiltros();
+    }
+
+    // ✅ Expor função globalmente para acesso externo
+    window.limparFiltrosCentroCusto = limparFiltros;
+
+    // ✅ Função para adicionar contador de caracteres
+    function adicionarContadorCaracteres() {
+        const textarea = $('#descricao');
+        const maxLength = textarea.attr('maxlength') || 500;
+        
+        // Remover contador anterior se existir
+        textarea.siblings('.char-counter').remove();
+        
+        // Criar contador
+        const counter = $(`<div class="char-counter">0/${maxLength}</div>`);
+        textarea.after(counter);
+        
+        // Atualizar contador
+        function atualizarContador() {
+            const length = textarea.val().length;
+            counter.text(`${length}/${maxLength}`);
+            
+            // Mudar cor quando próximo do limite
+            if (length > maxLength * 0.9) {
+                counter.css('color', 'var(--selleta-error)');
+            } else if (length > maxLength * 0.8) {
+                counter.css('color', 'var(--selleta-warning)');
+            } else {
+                counter.css('color', 'var(--selleta-gray-500)');
+            }
+        }
+        
+        // Eventos
+        textarea.on('input keyup', atualizarContador);
+        atualizarContador(); // Inicial
     }
 
     function atualizarKPIs() {
@@ -383,10 +431,14 @@ $(document).ready(function() {
                 $('#centro_custo_original').val($(this).val());
             }
         });
+        
+        // ✅ Adicionar contador de caracteres para textarea
+        adicionarContadorCaracteres();
     }
 
     function editarCentro(id) {
-        const centro = centrosDados.find(c => c.id === id);
+        // ✅ Buscar sempre no dataset original completo
+        const centro = centrosOriginais.find(c => c.id === id);
         if (!centro) return;
         
         $('#modal-title').text('Editar Centro de Custo');
@@ -472,7 +524,8 @@ $(document).ready(function() {
     }
 
     function relatorioIndividual(id) {
-        const centro = centrosDados.find(c => c.id === id);
+        // ✅ Buscar sempre no dataset original completo
+        const centro = centrosOriginais.find(c => c.id === id);
         if (!centro) return;
         
         mostrarNotificacao(`Gerando relatório individual para "${centro.mascara_cc}"...`, 'info');

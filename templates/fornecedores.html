@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}Selleta Financeiro | Gestão de Fornecedores{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/fornecedores.css') }}">
+{% endblock %}
+
+{% block breadcrumb %}
+<span>Dashboard</span>
+<i class="fas fa-chevron-right"></i>
+<span>Cadastros</span>
+<i class="fas fa-chevron-right"></i>
+<span>Gestão de Fornecedores</span>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header - Seguindo padrão estabelecido -->
+<div class="page-header">
+    <div class="page-title">
+        <h2><i class="fas fa-users"></i> Gestão de Fornecedores</h2>
+        <p>Sistema completo com detecção automática e correções aplicadas</p>
+    </div>
+    <div class="page-actions">
+        <button class="btn btn-reports" id="btn-relatorios-fornecedores">
+            <i class="fas fa-chart-bar"></i> Relatórios Gerais
+        </button>
+        <button class="btn btn-primary" onclick="novoFornecedor()">
+            <i class="fas fa-plus"></i> Novo Fornecedor
+        </button>
+    </div>
+</div>
+
+<!-- KPI Dashboard - Seguindo padrão centro_custo -->
+<div class="kpi-section">
+    <div class="kpi-grid">
+        <div class="kpi-card sistema-original">
+            <div class="kpi-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="kpi-value" id="totalFornecedores">0</div>
+            <div class="kpi-label">Total Fornecedores</div>
+        </div>
+        
+        <div class="kpi-card sistema-original">
+            <div class="kpi-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="kpi-value" id="sistemaOriginal">0</div>
+            <div class="kpi-label">Sistema Original</div>
+        </div>
+        
+        <div class="kpi-card deteccao-forcada">
+            <div class="kpi-icon">
+                <i class="fas fa-plus-circle"></i>
+            </div>
+            <div class="kpi-value" id="deteccoesForcadas">0</div>
+            <div class="kpi-label">Detecções Forçadas</div>
+        </div>
+        
+        <div class="kpi-card deteccao-corrigida">
+            <div class="kpi-icon">
+                <i class="fas fa-wrench"></i>
+            </div>
+            <div class="kpi-value" id="deteccoesCorrigidas">0</div>
+            <div class="kpi-label">Correções Aplicadas</div>
+        </div>
+        
+        <div class="kpi-card categoria-generica">
+            <div class="kpi-icon">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <div class="kpi-value" id="categoriasGenericas">0</div>
+            <div class="kpi-label">Categorias Genéricas</div>
+        </div>
+        
+        <div class="kpi-card valor-total">
+            <div class="kpi-icon">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="kpi-value" id="valorTotal">R$ 0</div>
+            <div class="kpi-label">Movimentação Total</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros - Seguindo padrão empresas -->
+<div class="filters-section">
+    <div class="search-filter">
+        <i class="fas fa-search"></i>
+        <input type="text" class="search-input" id="searchInput" placeholder="Buscar fornecedor...">
+    </div>
+    
+    <div class="filter-options">
+        <select class="filter-select" id="metodoFilter">
+            <option value="">Todos os Métodos</option>
+            <option value="exato">Sistema Original (Exato)</option>
+            <option value="forcado_empresa">Detecção Forçada</option>
+            <option value="corrigido_cpf_parcial">Correções Aplicadas</option>
+            <option value="palavras_chave">Palavras-chave</option>
+            <option value="fuzzy_nome">Fuzzy Nome</option>
+            <option value="cpf_cnpj">CPF/CNPJ</option>
+            <option value="categoria_generica">Categoria Genérica</option>
+        </select>
+        
+        <select class="filter-select" id="tipoFilter">
+            <option value="">Todos os Tipos</option>
+            <option value="empresa">Empresa</option>
+            <option value="pessoa_fisica">Pessoa Física</option>
+            <option value="generico">Categoria Genérica</option>
+        </select>
+        
+        <select class="filter-select" id="flagFilter">
+            <option value="">Todas</option>
+            <option value="forcada">Detecção Forçada</option>
+            <option value="corrigida">Detecção Corrigida</option>
+            <option value="normal">Sem Flags</option>
+        </select>
+    </div>
+    
+    <div class="filter-actions">
+        <button class="btn-filter btn-clear" onclick="clearFilters()">
+            <i class="fas fa-eraser"></i>
+            Limpar
+        </button>
+        <button class="btn-filter btn-export" onclick="exportData()">
+            <i class="fas fa-download"></i>
+            Exportar
+        </button>
+    </div>
+</div>
+
+<!-- Visualização em Abas - Seguindo padrão centro_custo -->
+<div class="view-tabs">
+    <button class="tab-button active" id="view-table-btn" data-view="table">
+        <i class="fas fa-table"></i> Tabela
+    </button>
+    <button class="tab-button" id="view-cards-btn" data-view="cards">
+        <i class="fas fa-th-large"></i> Cards
+    </button>
+    <div class="result-info">
+        <span>Mostrando: <strong id="resultCount">0</strong> fornecedores</span>
+    </div>
+</div>
+
+<!-- View: Tabela (padrão) -->
+<div class="view-content active" id="view-table">
+    <div class="table-container">
+        <table class="fornecedores-table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th class="col-cnpj-cpf">CNPJ/CPF</th>
+                    <th>Tipo</th>
+                    <th>Valor Total</th>
+                    <th>Transações</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="fornecedoresTableBody">
+                <!-- Linhas serão carregadas via JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- View: Cards -->
+<div class="view-content" id="view-cards" style="display: none;">
+    <div class="fornecedores-grid" id="fornecedoresCards">
+        <!-- Cards serão carregados via JavaScript -->
+    </div>
+</div>
+
+<!-- Paginação -->
+<div class="pagination-container">
+    <div class="pagination" id="pagination">
+        <!-- Paginação será carregada via JavaScript -->
+    </div>
+</div>
+
+<!-- Estado vazio -->
+<div class="empty-state" id="empty-state" style="display: none;">
+    <i class="fas fa-users"></i>
+    <h3>Nenhum fornecedor encontrado</h3>
+    <p>Não há fornecedores cadastrados ou que correspondem aos filtros aplicados.</p>
+    <button class="btn page-actions btn" onclick="novoFornecedor()">
+        <i class="fas fa-plus"></i> Cadastrar primeiro fornecedor
+    </button>
+</div>
+
+<!-- Loading -->
+<div class="loading" id="loading" style="display: none;">
+    <i class="fas fa-spinner"></i>
+    <span>Carregando fornecedores...</span>
+</div>
+
+<!-- Modal Fornecedor - Seguindo padrão centro_custo -->
+<div id="modal-fornecedor" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-title">Novo Fornecedor</h3>
+            <button class="modal-close" type="button">&times;</button>
+        </div>
+        
+        <form id="form-fornecedor" class="modal-body">
+            <input type="hidden" id="fornecedor_id" name="fornecedor_id">
+            
+            <!-- Seção: Identificação -->
+            <div class="form-section">
+                <div class="form-section-title">
+                    <i class="fas fa-user"></i>
+                    Identificação
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nome">Nome do Fornecedor</label>
+                        <input type="text" id="nome" name="nome" required maxlength="255" 
+                               placeholder="Nome completo do fornecedor">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="cnpj_cpf">CNPJ/CPF</label>
+                        <input type="text" id="cnpj_cpf" name="cnpj_cpf" maxlength="20" 
+                               placeholder="000.000.000-00 ou 00.000.000/0000-00">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tipo_fornecedor">Tipo de Fornecedor</label>
+                        <select id="tipo_fornecedor" name="tipo_fornecedor" required>
+                            <option value="">Selecione o tipo</option>
+                            <option value="empresa">Empresa</option>
+                            <option value="pessoa_fisica">Pessoa Física</option>
+                            <option value="generico">Categoria Genérica</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="origem">Origem</label>
+                        <input type="text" id="origem" name="origem" readonly 
+                               placeholder="Origem será definida automaticamente">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seção: Dados Bancários -->
+            <div class="form-section">
+                <div class="form-section-title">
+                    <i class="fas fa-university"></i>
+                    Dados Bancários
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="banco">Banco</label>
+                        <input type="text" id="banco" name="banco" maxlength="100" 
+                               placeholder="Nome do banco">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="agencia">Agência</label>
+                        <input type="text" id="agencia" name="agencia" maxlength="10" 
+                               placeholder="0000">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="conta">Conta</label>
+                        <input type="text" id="conta" name="conta" maxlength="20" 
+                               placeholder="00000-0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tipo_conta">Tipo de Conta</label>
+                        <select id="tipo_conta" name="tipo_conta">
+                            <option value="">Selecione...</option>
+                            <option value="corrente">Conta Corrente</option>
+                            <option value="poupanca">Conta Poupança</option>
+                            <option value="pagamento">Conta Pagamento</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="chave_pix">Chave PIX</label>
+                    <input type="text" id="chave_pix" name="chave_pix" maxlength="100" 
+                           placeholder="CPF, e-mail, telefone ou chave aleatória">
+                </div>
+            </div>
+            
+            <!-- Seção: Informações de Sistema -->
+            <div class="form-section">
+                <div class="form-section-title">
+                    <i class="fas fa-cog"></i>
+                    Informações de Sistema
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="metodo_deteccao">Método de Detecção</label>
+                        <input type="text" id="metodo_deteccao" name="metodo_deteccao" readonly 
+                               placeholder="Será definido automaticamente">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="similaridade">Similaridade (%)</label>
+                        <input type="number" id="similaridade" name="similaridade" readonly 
+                               min="0" max="100" step="0.1">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="valor_total_movimentado">Valor Total Movimentado</label>
+                        <input type="number" id="valor_total_movimentado" name="valor_total_movimentado" 
+                               readonly step="0.01" min="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="total_transacoes">Total de Transações</label>
+                        <input type="number" id="total_transacoes" name="total_transacoes" 
+                               readonly min="0">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seção: Observações -->
+            <div class="form-section">
+                <div class="form-section-title">
+                    <i class="fas fa-sticky-note"></i>
+                    Observações
+                </div>
+                
+                <div class="form-group">
+                    <label for="descricao">Descrição</label>
+                    <textarea id="descricao" name="descricao" rows="3" maxlength="500" 
+                              placeholder="Descrição detalhada do fornecedor..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="observacoes">Observações Técnicas</label>
+                    <textarea id="observacoes" name="observacoes" rows="3" readonly 
+                              placeholder="Observações de sistema sobre detecção..."></textarea>
+                </div>
+            </div>
+        </form>
+        
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="btn-cancelar">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+            <button type="submit" form="form-fornecedor" class="btn btn-primary" id="btn-salvar">
+                <i class="fas fa-save"></i> Salvar
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/fornecedores.js') }}"></script>
+{% endblock %}

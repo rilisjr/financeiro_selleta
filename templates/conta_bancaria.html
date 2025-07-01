@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+
+{% block title %}Selleta Financeiro | Contas Bancárias{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/conta_bancaria.css') }}">
+{% endblock %}
+
+{% block breadcrumb %}
+<span>Dashboard</span>
+<i class="fas fa-chevron-right"></i>
+<span>Cadastros</span>
+<i class="fas fa-chevron-right"></i>
+<span>Contas Bancárias</span>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="page-title">
+        <h2><i class="fas fa-university"></i> Gestão de Contas Bancárias</h2>
+        <p>Administre as contas bancárias com controle de saldos e movimentações</p>
+    </div>
+    
+    <div class="page-actions">
+        <button class="btn btn-reports" id="btn-relatorios-gerais">
+            <i class="fas fa-chart-bar"></i> Relatórios Gerais
+        </button>
+        <button class="btn btn-primary" id="btn-nova-conta">
+            <i class="fas fa-plus"></i> Nova Conta Bancária
+        </button>
+    </div>
+</div>
+
+<!-- KPIs Section -->
+<div class="kpis-section">
+    <div class="kpi-card">
+        <div class="kpi-content">
+            <div class="kpi-icon ativa">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="kpi-data">
+                <h3 id="kpi-contas-ativas">0</h3>
+                <p>Contas Ativas</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-content">
+            <div class="kpi-icon somatoria-saldo">
+                <i class="fas fa-balance-scale"></i>
+            </div>
+            <div class="kpi-data">
+                <h3 id="kpi-somatoria-saldo">R$ 0,00</h3>
+                <p>Somatória de Saldo</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-content">
+            <div class="kpi-icon total-contas">
+                <i class="fas fa-university"></i>
+            </div>
+            <div class="kpi-data">
+                <h3 id="kpi-total-contas">0</h3>
+                <p>Total de Contas</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-content">
+            <div class="kpi-icon total-bancos">
+                <i class="fas fa-building"></i>
+            </div>
+            <div class="kpi-data">
+                <h3 id="kpi-total-bancos">0</h3>
+                <p>Total de Bancos</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-container">
+    <!-- Filtros Avançados -->
+    <div class="filters-section">
+        <div class="search-filter">
+            <input type="text" id="pesquisa-conta" placeholder="Pesquisar conta, banco ou empresa..." class="search-input">
+            <i class="fas fa-search"></i>
+        </div>
+        
+        <div class="filter-options">
+            <select id="filtro-banco" class="filter-select">
+                <option value="">Todos os bancos</option>
+            </select>
+            
+            <select id="filtro-empresa" class="filter-select">
+                <option value="">Todas as empresas</option>
+            </select>
+            
+            <select id="filtro-tipo" class="filter-select">
+                <option value="">Todos os tipos</option>
+                <option value="Bancária">Bancária</option>
+                <option value="Investimento">Investimento</option>
+            </select>
+            
+            <select id="filtro-status" class="filter-select">
+                <option value="">Todos os status</option>
+                <option value="Ativa">Ativas</option>
+                <option value="Aberta">Abertas</option>
+                <option value="Desativada">Desativadas</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Visualização em Abas -->
+    <div class="view-tabs">
+        <button class="tab-button active" data-view="cards">
+            <i class="fas fa-th-large"></i> Cartões
+        </button>
+        <button class="tab-button" data-view="table">
+            <i class="fas fa-table"></i> Tabela
+        </button>
+        <button class="tab-button" data-view="stats">
+            <i class="fas fa-chart-pie"></i> Estatísticas
+        </button>
+    </div>
+
+    <!-- View: Cartões -->
+    <div class="view-content active" id="view-cards">
+        <div class="contas-grid" id="contas-lista">
+            <!-- Cards de contas serão carregados aqui via JavaScript -->
+        </div>
+    </div>
+
+    <!-- View: Tabela -->
+    <div class="view-content" id="view-table">
+        <div class="table-container">
+            <table class="contas-table">
+                <thead>
+                    <tr>
+                        <th>Banco</th>
+                        <th>Agência</th>
+                        <th>Conta</th>
+                        <th>Empresa</th>
+                        <th>Tipo</th>
+                        <th>Saldo</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="contas-tabela">
+                    <!-- Linhas serão carregadas via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- View: Estatísticas -->
+    <div class="view-content" id="view-stats">
+        <div class="stats-grid">
+            <div class="stats-card">
+                <h3><i class="fas fa-building"></i> Por Banco</h3>
+                <div class="stats-chart" id="chart-bancos">
+                    <!-- Chart será carregado via JavaScript -->
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h3><i class="fas fa-industry"></i> Por Empresa</h3>
+                <div class="stats-chart" id="chart-empresas">
+                    <!-- Chart será carregado via JavaScript -->
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h3><i class="fas fa-balance-scale"></i> Distribuição de Saldos</h3>
+                <div class="stats-chart" id="chart-saldos">
+                    <!-- Chart será carregado via JavaScript -->
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h3><i class="fas fa-chart-line"></i> Evolução Mensal</h3>
+                <div class="stats-chart" id="chart-evolucao">
+                    <!-- Chart será carregado via JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading" style="display: none;">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>Carregando contas bancárias...</span>
+    </div>
+
+    <!-- Mensagem de lista vazia -->
+    <div class="empty-state" id="empty-state" style="display: none;">
+        <i class="fas fa-university"></i>
+        <h3>Nenhuma conta bancária encontrada</h3>
+        <p>Não há contas bancárias cadastradas ou que correspondem aos filtros aplicados.</p>
+        <button class="btn btn-primary" id="btn-nova-conta-empty">
+            <i class="fas fa-plus"></i> Cadastrar primeira conta
+        </button>
+    </div>
+</div>
+
+<!-- Modal de Nova/Editar Conta Bancária -->
+<div id="modal-conta" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-title">Nova Conta Bancária</h3>
+            <button class="modal-close" type="button">&times;</button>
+        </div>
+        
+        <form id="form-conta" class="modal-body">
+            <input type="hidden" id="conta_id" name="conta_id">
+            
+            <!-- Seção: Identificação -->
+            <div class="form-section">
+                <div class="form-section-title">
+                    <i class="fas fa-tag"></i>
+                    Identificação da Conta
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="conta_corrente">Conta Corrente</label>
+                        <input type="text" id="conta_corrente" name="conta_corrente" required maxlength="50" 
+                               placeholder="Número da conta">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="agencia">Agência</label>
+                        <input type="text" id="agencia" name="agencia" required maxlength="50" 
+                               placeholder="Número da agência">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="banco">Banco</label>
+                        <input type="text" id="banco" name="banco" maxlength="100" 
+                               placeholder="Nome do banco">
+                        <small class="form-hint">
+                            <i class="fas fa-info-circle"></i>
+                            Deixe em branco se não souber o banco
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mascara">Máscara (Identificação rápida)</label>
+                        <input type="text" id="mascara" name="mascara" maxlength="200" 
+                               placeholder="Ex: Conta Salários">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seção: Vinculação -->
+            <div class="form-section">
+                <div class="form-section-title">
+                    <i class="fas fa-building"></i>
+                    Vinculação e Tipo
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="empresa">Empresa</label>
+                        <input type="text" id="empresa" name="empresa" required maxlength="200"
+                               placeholder="Nome da empresa titular">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tipo_conta">Tipo de Conta</label>
+                        <select id="tipo_conta" name="tipo_conta">
+                            <option value="">Selecione o tipo</option>
+                            <option value="Bancária">Bancária</option>
+                            <option value="Investimento">Investimento</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seção: Valores e Status -->
+            <div class="form-section">
+                <div class="form-section-title">
+                    <i class="fas fa-dollar-sign"></i>
+                    Valores e Status
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="saldo_inicial">Saldo Inicial</label>
+                        <input type="number" id="saldo_inicial" name="saldo_inicial" step="0.01" value="0.00"
+                               placeholder="0.00">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="status_conta">Status da Conta</label>
+                        <select id="status_conta" name="status_conta" required>
+                            <option value="Ativa">Ativa</option>
+                            <option value="Aberta">Aberta</option>
+                            <option value="Desativada">Desativada</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </form>
+        
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="btn-cancelar">Cancelar</button>
+            <button type="submit" form="form-conta" class="btn btn-primary" id="btn-salvar">
+                <i class="fas fa-save"></i> Salvar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Relatórios -->
+<div id="modal-relatorios" class="modal">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h3>Relatórios de Contas Bancárias</h3>
+            <button class="modal-close" type="button">&times;</button>
+        </div>
+        
+        <div class="modal-body reports-body">
+            <div class="reports-grid">
+                <div class="report-card">
+                    <div class="report-icon">
+                        <i class="fas fa-file-excel"></i>
+                    </div>
+                    <h4>Exportar Lista Completa</h4>
+                    <p>Exporta todas as contas com saldos e informações completas</p>
+                    <button class="btn btn-success btn-export" data-type="complete">
+                        <i class="fas fa-download"></i> Excel
+                    </button>
+                </div>
+                
+                <div class="report-card">
+                    <div class="report-icon">
+                        <i class="fas fa-balance-scale"></i>
+                    </div>
+                    <h4>Relatório de Saldos</h4>
+                    <p>Análise detalhada dos saldos por empresa e banco</p>
+                    <button class="btn btn-primary btn-export" data-type="saldos">
+                        <i class="fas fa-download"></i> Excel
+                    </button>
+                </div>
+                
+                <div class="report-card">
+                    <div class="report-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h4>Relatório por Banco</h4>
+                    <p>Contas agrupadas por instituição bancária</p>
+                    <button class="btn btn-info btn-export" data-type="bancos">
+                        <i class="fas fa-download"></i> Excel
+                    </button>
+                </div>
+                
+                <div class="report-card">
+                    <div class="report-icon">
+                        <i class="fas fa-industry"></i>
+                    </div>
+                    <h4>Relatório por Empresa</h4>
+                    <p>Contas organizadas por empresa titular</p>
+                    <button class="btn btn-warning btn-export" data-type="empresas">
+                        <i class="fas fa-download"></i> Excel
+                    </button>
+                </div>
+                
+                <div class="report-card">
+                    <div class="report-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h4>Análise de Movimentação</h4>
+                    <p>Histórico de movimentações e tendências</p>
+                    <button class="btn btn-secondary btn-export" data-type="movimentacao">
+                        <i class="fas fa-download"></i> Excel
+                    </button>
+                </div>
+                
+                <div class="report-card">
+                    <div class="report-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h4>Contas Inativas</h4>
+                    <p>Relatório de contas desativadas ou sem movimentação</p>
+                    <button class="btn btn-dark btn-export" data-type="inativas">
+                        <i class="fas fa-download"></i> Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/conta_bancaria.js') }}"></script>
+{% endblock %}

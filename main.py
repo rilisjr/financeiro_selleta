@@ -2,9 +2,19 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from werkzeug.security import check_password_hash, generate_password_hash
 import sqlite3
 import os
+from datetime import datetime, date, timedelta
+import logging
+from filtros_avancados import FiltrosAvancados, aplicar_filtro_smart, get_status_counts, get_view_metrics
+from rotas_adm import admin_bp
+
+# Configurar logger
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+
+# Registrar Blueprint administrativo
+app.register_blueprint(admin_bp)
 
 # Verifica se o banco de dados existe, se não, cria
 db_path = 'selleta_main.db'
@@ -117,8 +127,8 @@ def dashboard():
         return redirect(url_for('index'))
     
     try:
-        # Por enquanto, vamos retornar dados estáticos até implementarmos as novas transações
-        return render_template('dashboard_novo.html')
+        # Usando template que estende base.html para consistência de navegação
+        return render_template('dashboard_novo_base.html')
         
     except Exception as e:
         flash('error', f"Erro ao carregar dashboard: {str(e)}")
@@ -748,6 +758,213 @@ def api_atualizar_centro_custo(centro_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# ====== ROTAS DE FORNECEDORES ======
+
+@app.route('/fornecedores')
+def fornecedores():
+    if 'user_id' not in session:
+        flash('error', 'Você não está autenticado.')
+        return redirect(url_for('index'))
+    
+    return render_template('fornecedores.html')
+
+@app.route('/api/fornecedores', methods=['GET'])
+def api_listar_fornecedores():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Buscar todos os fornecedores ordenados por nome
+        cursor.execute('''
+            SELECT id, nome, nome_original, cnpj_cpf, origem, tipo_fornecedor,
+                   agencia, banco, conta, chave_pix, tipo_conta, favorecido, cpf_cnpj_favorecido,
+                   descricao, metodo_deteccao, similaridade, deteccao_forcada, deteccao_corrigida,
+                   observacoes, valor_total_movimentado, total_transacoes, ativo
+            FROM fornecedores
+            WHERE ativo = 1
+            ORDER BY nome
+        ''')
+        
+        fornecedores = []
+        for row in cursor.fetchall():
+            fornecedores.append({
+                'id': row['id'],
+                'nome': row['nome'],
+                'nome_original': row['nome_original'],
+                'cnpj_cpf': row['cnpj_cpf'],
+                'origem': row['origem'],
+                'tipo_fornecedor': row['tipo_fornecedor'],
+                'agencia': row['agencia'],
+                'banco': row['banco'],
+                'conta': row['conta'],
+                'chave_pix': row['chave_pix'],
+                'tipo_conta': row['tipo_conta'],
+                'favorecido': row['favorecido'],
+                'cpf_cnpj_favorecido': row['cpf_cnpj_favorecido'],
+                'descricao': row['descricao'],
+                'metodo_deteccao': row['metodo_deteccao'],
+                'similaridade': row['similaridade'],
+                'deteccao_forcada': bool(row['deteccao_forcada']),
+                'deteccao_corrigida': bool(row['deteccao_corrigida']),
+                'observacoes': row['observacoes'],
+                'valor_total_movimentado': row['valor_total_movimentado'],
+                'total_transacoes': row['total_transacoes'],
+                'ativo': bool(row['ativo'])
+            })
+        
+        conn.close()
+        return jsonify(fornecedores)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/fornecedores', methods=['POST'])
+def api_criar_fornecedor():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        # Validações
+        if not data.get('nome'):
+            return jsonify({'error': 'Nome é obrigatório'}), 400
+        
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Verificar se já existe fornecedor com o mesmo nome
+        cursor.execute('SELECT id FROM fornecedores WHERE nome = ? AND ativo = 1', (data['nome'],))
+        if cursor.fetchone():
+            return jsonify({'error': 'Já existe um fornecedor com este nome'}), 400
+        
+        # Inserir novo fornecedor
+        cursor.execute('''
+            INSERT INTO fornecedores (
+                nome, nome_original, cnpj_cpf, origem, tipo_fornecedor,
+                agencia, banco, conta, chave_pix, tipo_conta, favorecido, cpf_cnpj_favorecido,
+                descricao, metodo_deteccao, similaridade, deteccao_forcada, deteccao_corrigida,
+                observacoes, valor_total_movimentado, total_transacoes, ativo
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            data['nome'],
+            data.get('nome_original', data['nome']),
+            data.get('cnpj_cpf', ''),
+            data.get('origem', 'MANUAL'),
+            data.get('tipo_fornecedor', 'empresa'),
+            data.get('agencia', ''),
+            data.get('banco', ''),
+            data.get('conta', ''),
+            data.get('chave_pix', ''),
+            data.get('tipo_conta', ''),
+            data.get('favorecido', ''),
+            data.get('cpf_cnpj_favorecido', ''),
+            data.get('descricao', ''),
+            data.get('metodo_deteccao', 'manual'),
+            data.get('similaridade', 1.0),
+            data.get('deteccao_forcada', False),
+            data.get('deteccao_corrigida', False),
+            data.get('observacoes', ''),
+            data.get('valor_total_movimentado', 0),
+            data.get('total_transacoes', 0),
+            data.get('ativo', True)
+        ))
+        
+        fornecedor_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'id': fornecedor_id, 'success': True})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/fornecedores/<int:fornecedor_id>', methods=['PUT'])
+def api_atualizar_fornecedor(fornecedor_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        # Validações
+        if not data.get('nome'):
+            return jsonify({'error': 'Nome é obrigatório'}), 400
+        
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Verificar se o fornecedor existe
+        cursor.execute('SELECT id FROM fornecedores WHERE id = ? AND ativo = 1', (fornecedor_id,))
+        if not cursor.fetchone():
+            return jsonify({'error': 'Fornecedor não encontrado'}), 404
+        
+        # Verificar se já existe outro fornecedor com o mesmo nome
+        cursor.execute('SELECT id FROM fornecedores WHERE nome = ? AND id != ? AND ativo = 1', (data['nome'], fornecedor_id))
+        if cursor.fetchone():
+            return jsonify({'error': 'Já existe outro fornecedor com este nome'}), 400
+        
+        # Atualizar fornecedor
+        cursor.execute('''
+            UPDATE fornecedores SET
+                nome = ?, cnpj_cpf = ?, tipo_fornecedor = ?, agencia = ?, banco = ?, conta = ?,
+                chave_pix = ?, tipo_conta = ?, favorecido = ?, cpf_cnpj_favorecido = ?,
+                descricao = ?, similaridade = ?, observacoes = ?
+            WHERE id = ?
+        ''', (
+            data['nome'],
+            data.get('cnpj_cpf', ''),
+            data.get('tipo_fornecedor', 'empresa'),
+            data.get('agencia', ''),
+            data.get('banco', ''),
+            data.get('conta', ''),
+            data.get('chave_pix', ''),
+            data.get('tipo_conta', ''),
+            data.get('favorecido', ''),
+            data.get('cpf_cnpj_favorecido', ''),
+            data.get('descricao', ''),
+            data.get('similaridade', 1.0),
+            data.get('observacoes', ''),
+            fornecedor_id
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/fornecedores/<int:fornecedor_id>', methods=['DELETE'])
+def api_excluir_fornecedor(fornecedor_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Verificar se o fornecedor existe
+        cursor.execute('SELECT id FROM fornecedores WHERE id = ? AND ativo = 1', (fornecedor_id,))
+        if not cursor.fetchone():
+            return jsonify({'error': 'Fornecedor não encontrado'}), 404
+        
+        # Soft delete - marcar como inativo
+        cursor.execute('UPDATE fornecedores SET ativo = 0 WHERE id = ?', (fornecedor_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # ====== ROTAS FUTURAS (PLACEHOLDER) ======
 
 @app.route('/clientes_fornecedores')
@@ -755,31 +972,34 @@ def clientes_fornecedores():
     if 'user_id' not in session:
         flash('error', 'Você não está autenticado.')
         return redirect(url_for('index'))
-    flash('info', 'Clientes/Fornecedores - Em desenvolvimento')
-    return redirect(url_for('dashboard'))
-
-@app.route('/conta_bancaria')
-def conta_bancaria():
-    if 'user_id' not in session:
-        flash('error', 'Você não está autenticado.')
-        return redirect(url_for('index'))
-    flash('info', 'Contas Bancárias - Em desenvolvimento')
-    return redirect(url_for('dashboard'))
+    
+    # Redirecionar para a página de fornecedores que já está implementada
+    return redirect(url_for('fornecedores'))
 
 @app.route('/transacoes')
 def transacoes():
     if 'user_id' not in session:
         flash('error', 'Você não está autenticado.')
         return redirect(url_for('index'))
-    flash('info', 'Gestão de Transações - Em desenvolvimento')
-    return redirect(url_for('dashboard'))
+    
+    try:
+        # FASE 2: Template implementado com UX híbrida
+        # Features: Cards + Tabela + Timeline + Parcelas + Filtros avançados
+        return render_template('transacoes.html')
+        
+    except Exception as e:
+        flash('error', f"Erro ao carregar transações: {str(e)}")
+        return redirect(url_for('dashboard'))
 
 @app.route('/nova_transacao')
 def nova_transacao():
     if 'user_id' not in session:
         flash('error', 'Você não está autenticado.')
         return redirect(url_for('index'))
-    flash('info', 'Nova Transação - Em desenvolvimento')
+    
+    # Página de nova transação - FASE 3
+    # TODO: Implementar template nova_transacao.html
+    flash('info', 'Nova Transação - APIs implementadas, aguardando template')
     return redirect(url_for('dashboard'))
 
 @app.route('/contas_pagar')
@@ -805,6 +1025,1022 @@ def relatorios():
         return redirect(url_for('index'))
     flash('info', 'Relatórios - Em desenvolvimento')
     return redirect(url_for('dashboard'))
+
+@app.route('/conta_bancaria')
+def conta_bancaria():
+    if 'user_id' not in session:
+        flash('error', 'Você não está autenticado.')
+        return redirect(url_for('index'))
+    
+    return render_template('conta_bancaria.html')
+
+@app.route('/api/contas_bancarias', methods=['GET'])
+def api_listar_contas_bancarias():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Buscar todas as contas bancárias ordenadas por banco e conta
+        cursor.execute('''
+            SELECT id, agencia, banco, conta_corrente, empresa, mascara, 
+                   tipo_conta, ativo, created_at, updated_at, saldo_inicial, status_conta
+            FROM conta_bancaria
+            WHERE ativo = 1
+            ORDER BY empresa, banco, conta_corrente
+        ''')
+        
+        contas = []
+        for row in cursor.fetchall():
+            contas.append({
+                'id': row['id'],
+                'agencia': row['agencia'],
+                'banco': row['banco'],
+                'conta_corrente': row['conta_corrente'],
+                'empresa': row['empresa'],
+                'mascara': row['mascara'],
+                'tipo_conta': row['tipo_conta'],
+                'ativo': row['ativo'],
+                'created_at': row['created_at'],
+                'updated_at': row['updated_at'],
+                'saldo_inicial': row['saldo_inicial'],
+                'status_conta': row['status_conta']
+            })
+        
+        conn.close()
+        return jsonify(contas)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/contas_bancarias', methods=['POST'])
+def api_criar_conta_bancaria():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        # Validações básicas
+        required_fields = ['agencia', 'banco', 'conta_corrente', 'empresa']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'Campo {field} é obrigatório'}), 400
+        
+        # Validar status_conta
+        status_validos = ['Aberta', 'Ativa', 'Desativada']
+        if data.get('status_conta') and data['status_conta'] not in status_validos:
+            return jsonify({'error': f'Status deve ser um dos: {", ".join(status_validos)}'}), 400
+        
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Verificar se conta já existe
+        cursor.execute('SELECT id FROM conta_bancaria WHERE conta_corrente = ? AND ativo = 1', 
+                      (data['conta_corrente'],))
+        if cursor.fetchone():
+            return jsonify({'error': 'Conta corrente já cadastrada'}), 400
+        
+        # Inserir nova conta
+        cursor.execute('''
+            INSERT INTO conta_bancaria (
+                agencia, banco, conta_corrente, empresa, mascara, tipo_conta, saldo_inicial, status_conta
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            data['agencia'],
+            data['banco'], 
+            data['conta_corrente'],
+            data['empresa'],
+            data.get('mascara'),
+            data.get('tipo_conta'),
+            float(data.get('saldo_inicial', 0.0)),
+            data.get('status_conta', 'Ativa')
+        ))
+        
+        conn.commit()
+        conta_id = cursor.lastrowid
+        conn.close()
+        
+        return jsonify({'message': 'Conta bancária criada com sucesso', 'id': conta_id}), 201
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/contas_bancarias/<int:conta_id>', methods=['PUT'])
+def api_atualizar_conta_bancaria(conta_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Verificar se conta existe
+        cursor.execute('SELECT id FROM conta_bancaria WHERE id = ? AND ativo = 1', (conta_id,))
+        if not cursor.fetchone():
+            return jsonify({'error': 'Conta bancária não encontrada'}), 404
+        
+        # Verificar se nova conta_corrente já existe (se foi alterada)
+        if 'conta_corrente' in data:
+            cursor.execute('SELECT id FROM conta_bancaria WHERE conta_corrente = ? AND id != ? AND ativo = 1', 
+                          (data['conta_corrente'], conta_id))
+            if cursor.fetchone():
+                return jsonify({'error': 'Conta corrente já cadastrada'}), 400
+        
+        # Atualizar conta
+        cursor.execute('''
+            UPDATE conta_bancaria SET
+                agencia = ?, banco = ?, conta_corrente = ?, empresa = ?,
+                mascara = ?, tipo_conta = ?, saldo_inicial = ?, status_conta = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ''', (
+            data.get('agencia'),
+            data.get('banco'),
+            data.get('conta_corrente'),
+            data.get('empresa'),
+            data.get('mascara'),
+            data.get('tipo_conta'),
+            float(data.get('saldo_inicial', 0.0)),
+            data.get('status_conta', 'Ativa'),
+            conta_id
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'message': 'Conta bancária atualizada com sucesso'}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/contas_bancarias/<int:conta_id>', methods=['DELETE'])
+def api_excluir_conta_bancaria(conta_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Verificar se conta existe
+        cursor.execute('SELECT id FROM conta_bancaria WHERE id = ? AND ativo = 1', (conta_id,))
+        if not cursor.fetchone():
+            return jsonify({'error': 'Conta bancária não encontrada'}), 404
+        
+        # Soft delete (marcar como inativo)
+        cursor.execute('UPDATE conta_bancaria SET ativo = 0 WHERE id = ?', (conta_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'message': 'Conta bancária excluída com sucesso'}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/bancos', methods=['GET'])
+def api_listar_bancos():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Buscar bancos únicos
+        cursor.execute('''
+            SELECT DISTINCT banco 
+            FROM conta_bancaria 
+            WHERE ativo = 1 AND banco IS NOT NULL AND banco != ''
+            ORDER BY banco
+        ''')
+        
+        bancos = [row[0] for row in cursor.fetchall()]
+        conn.close()
+        
+        return jsonify(bancos)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ====== FUNÇÕES AUXILIARES PARA TRANSAÇÕES ======
+def calcular_status_dinamico(data_vencimento, status_pagamento):
+    """
+    Calcula status dinâmico baseado na data de vencimento
+    Args:
+        data_vencimento: string no formato 'YYYY-MM-DD'
+        status_pagamento: string com o status atual
+    Returns:
+        string com o status dinâmico
+    """
+    if status_pagamento == 'Realizado':
+        return status_pagamento
+    
+    try:
+        vencimento = datetime.strptime(data_vencimento, '%Y-%m-%d').date()
+        hoje = date.today()
+        
+        if vencimento < hoje:
+            return 'Vencida'
+        else:
+            return 'Á realizar'
+    except:
+        return status_pagamento
+
+def validar_status_transacao(status_pagamento, status_negociacao):
+    """
+    Valida se os status de transação são válidos conforme CSV importado
+    Args:
+        status_pagamento: string
+        status_negociacao: string
+    Returns:
+        dict com 'valid': bool e 'errors': list
+    """
+    # Status válidos conforme CSV importado
+    status_pagamento_validos = ['Realizado', 'Á realizar']
+    status_negociacao_validos = ['NEGOCIADO', 'PARCIALMENTE NEGOCIADO', 'NÃO NEGOCIADO', 'A NEGOCIAR', 'PAGO']
+    
+    errors = []
+    
+    if status_pagamento and status_pagamento not in status_pagamento_validos:
+        errors.append(f'Status de pagamento inválido. Valores aceitos: {", ".join(status_pagamento_validos)}')
+    
+    if status_negociacao and status_negociacao not in status_negociacao_validos:
+        errors.append(f'Status de negociação inválido. Valores aceitos: {", ".join(status_negociacao_validos)}')
+    
+    return {
+        'valid': len(errors) == 0,
+        'errors': errors
+    }
+
+# ====== ROTAS DE TRANSAÇÕES (NOVO) ======
+@app.route('/api/transacoes', methods=['GET'])
+def api_listar_transacoes():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Parâmetros de filtro
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 50, type=int)
+        tipo = request.args.get('tipo')
+        status_pagamento = request.args.get('status_pagamento')
+        status_negociacao = request.args.get('status_negociacao')
+        empresa_id = request.args.get('empresa_id')
+        centro_custo_id = request.args.get('centro_custo_id')
+        plano_financeiro_id = request.args.get('plano_financeiro_id')
+        tipologia = request.args.get('tipologia')
+        # Suporte para ambos os nomes de parâmetros de data
+        data_inicio = request.args.get('data_inicio') or request.args.get('data_vencimento_inicio')
+        data_fim = request.args.get('data_fim') or request.args.get('data_vencimento_fim')
+        search = request.args.get('search')
+        view_type = request.args.get('view_type', 'previsao')  # Novo: view toggle
+        
+        # Query base com JOINs
+        query = '''
+            SELECT t.*, 
+                   f.nome as fornecedor_nome,
+                   cc.mascara_cc as centro_custo_nome,
+                   e.nome as empresa_nome,
+                   pf.codigo as plano_financeiro_codigo,
+                   pf.nome as plano_financeiro_nome,
+                   u.username as usuario_nome
+            FROM transacoes t
+            LEFT JOIN fornecedores f ON t.cliente_fornecedor_id = f.id
+            LEFT JOIN centros_custo cc ON t.centro_custo_id = cc.id
+            LEFT JOIN empresas e ON t.empresa_id = e.id
+            LEFT JOIN plano_financeiro pf ON t.plano_financeiro_id = pf.id
+            LEFT JOIN usuarios u ON t.usuario_id = u.id
+            WHERE 1=1
+        '''
+        
+        params = []
+        
+        # Aplicar filtros
+        if tipo:
+            query += ' AND t.tipo = ?'
+            params.append(tipo)
+            
+        if status_pagamento:
+            query += ' AND t.status_pagamento = ?'
+            params.append(status_pagamento)
+            
+        if status_negociacao:
+            query += ' AND t.status_negociacao = ?'
+            params.append(status_negociacao)
+            
+        if empresa_id:
+            query += ' AND t.empresa_id = ?'
+            params.append(empresa_id)
+            
+        if centro_custo_id:
+            query += ' AND t.centro_custo_id = ?'
+            params.append(centro_custo_id)
+            
+        if plano_financeiro_id:
+            query += ' AND t.plano_financeiro_id = ?'
+            params.append(plano_financeiro_id)
+            
+        if tipologia:
+            query += ' AND cc.tipologia = ?'
+            params.append(tipologia)
+            
+        if data_inicio:
+            query += ' AND t.data_vencimento >= ?'
+            params.append(data_inicio)
+            
+        if data_fim:
+            query += ' AND t.data_vencimento <= ?'
+            params.append(data_fim)
+            
+        if search:
+            query += ''' AND (t.titulo LIKE ? OR t.numero_documento LIKE ? 
+                         OR f.nome LIKE ? OR t.observacao LIKE ?)'''
+            search_param = f'%{search}%'
+            params.extend([search_param, search_param, search_param, search_param])
+        
+        # Aplicar filtro avançado de view (NOVO)
+        query, params = aplicar_filtro_smart(query, params, view_type)
+        
+        # Contar total de registros
+        count_query = '''
+            SELECT COUNT(*) as total
+            FROM transacoes t
+            LEFT JOIN fornecedores f ON t.cliente_fornecedor_id = f.id
+            LEFT JOIN centros_custo cc ON t.centro_custo_id = cc.id
+            LEFT JOIN empresas e ON t.empresa_id = e.id
+            LEFT JOIN plano_financeiro pf ON t.plano_financeiro_id = pf.id
+            LEFT JOIN usuarios u ON t.usuario_id = u.id
+            WHERE 1=1
+        '''
+        
+        # Aplicar os mesmos filtros na contagem
+        if tipo:
+            count_query += ' AND t.tipo = ?'
+        if status_pagamento:
+            count_query += ' AND t.status_pagamento = ?'
+        if status_negociacao:
+            count_query += ' AND t.status_negociacao = ?'
+        if empresa_id:
+            count_query += ' AND t.empresa_id = ?'
+        if centro_custo_id:
+            count_query += ' AND t.centro_custo_id = ?'
+        if plano_financeiro_id:
+            count_query += ' AND t.plano_financeiro_id = ?'
+        if tipologia:
+            count_query += ' AND cc.tipologia = ?'
+        if data_inicio:
+            count_query += ' AND t.data_vencimento >= ?'
+        if data_fim:
+            count_query += ' AND t.data_vencimento <= ?'
+        if search:
+            count_query += ''' AND (t.titulo LIKE ? OR t.numero_documento LIKE ? 
+                         OR f.nome LIKE ? OR t.observacao LIKE ?)'''
+        
+        # Aplicar filtro avançado na contagem também
+        count_query, count_params = aplicar_filtro_smart(count_query, params, view_type)
+        
+        cursor.execute(count_query, count_params)
+        total = cursor.fetchone()['total']
+        
+        # Aplicar paginação
+        query += ' ORDER BY t.data_vencimento DESC, t.id DESC'
+        query += f' LIMIT {per_page} OFFSET {(page - 1) * per_page}'
+        
+        cursor.execute(query, params)
+        
+        transacoes = []
+        for row in cursor.fetchall():
+            # Calcular status dinâmico baseado na data de vencimento
+            status_pagamento_original = row['status_pagamento']
+            status_pagamento_dinamico = calcular_status_dinamico(row['data_vencimento'], status_pagamento_original)
+            
+            transacoes.append({
+                'id': row['id'],
+                'titulo': row['titulo'],
+                'numero_documento': row['numero_documento'],
+                'parcela_atual': row['parcela_atual'],
+                'parcela_total': row['parcela_total'],
+                'valor': float(row['valor']) if row['valor'] else 0.00,
+                'data_lancamento': row['data_lancamento'],
+                'data_vencimento': row['data_vencimento'],
+                'data_competencia': row['data_competencia'],
+                'tipo': row['tipo'],
+                'tipologia': row['tipologia'],
+                'status_negociacao': row['status_negociacao'],
+                'status_pagamento': status_pagamento_dinamico,
+                'status_pagamento_original': status_pagamento_original,
+                'municipio': row['municipio'],
+                'observacao': row['observacao'],
+                'cliente_fornecedor_id': row['cliente_fornecedor_id'],
+                'fornecedor_nome': row['fornecedor_nome'],
+                'centro_custo_id': row['centro_custo_id'],
+                'centro_custo_nome': row['centro_custo_nome'],
+                'empresa_id': row['empresa_id'],
+                'empresa_nome': row['empresa_nome'],
+                'plano_financeiro_id': row['plano_financeiro_id'],
+                'plano_financeiro_nome': row['plano_financeiro_nome'],
+                'usuario_id': row['usuario_id'],
+                'usuario_nome': row['usuario_nome'],
+                'criado_em': row['criado_em'],
+                'atualizado_em': row['atualizado_em']
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'transacoes': transacoes,
+            'total': total,
+            'page': page,
+            'per_page': per_page,
+            'total_pages': (total + per_page - 1) // per_page
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao listar transações: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/transacoes/view-counts', methods=['GET'])
+def api_view_counts():
+    """
+    Nova API para obter contagens dos filtros de view
+    Retorna contagens para Previsão, Consolidado e Atrasado
+    """
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        # Obter contagens dos filtros avançados
+        counts = get_status_counts()
+        
+        return jsonify({
+            'previsao': counts['previsao'],
+            'consolidado': counts['consolidado'], 
+            'atrasado': counts['atrasado'],
+            'total': counts['total']
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao obter contagens de view: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/transacoes/view-metrics/<view_type>', methods=['GET'])
+def api_view_metrics(view_type):
+    """
+    Nova API para obter métricas específicas por tipo de view
+    """
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    if view_type not in ['previsao', 'consolidado', 'atrasado']:
+        return jsonify({'error': 'View type inválido'}), 400
+    
+    try:
+        # Obter métricas específicas do view
+        metrics = get_view_metrics(view_type)
+        
+        return jsonify({
+            'view_type': view_type,
+            'receitas': metrics['receitas'],
+            'despesas': metrics['despesas'],
+            'saldo': metrics['saldo'],
+            'count_receitas': metrics['count_receitas'],
+            'count_despesas': metrics['count_despesas'],
+            'total_transacoes': metrics['total_transacoes'],
+            'valor_medio': metrics['valor_medio']
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao obter métricas de view: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/transacoes', methods=['POST'])
+def api_criar_transacao():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        data = request.get_json()
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Validações básicas
+        required_fields = ['titulo', 'valor', 'tipo', 'data_vencimento', 
+                          'cliente_fornecedor_id', 'centro_custo_id', 
+                          'empresa_id', 'plano_financeiro_id']
+        
+        for field in required_fields:
+            if field not in data or not data[field]:
+                return jsonify({'error': f'Campo {field} é obrigatório'}), 400
+        
+        # Validar status se fornecidos
+        status_validation = validar_status_transacao(
+            data.get('status_pagamento'), 
+            data.get('status_negociacao')
+        )
+        if not status_validation['valid']:
+            return jsonify({'error': '; '.join(status_validation['errors'])}), 400
+        
+        # Verificar se é parcelamento
+        parcela_total = data.get('parcela_total', 1)
+        
+        if parcela_total > 1:
+            # Criar transações parceladas
+            return api_criar_transacoes_parceladas(data)
+        
+        # Criar transação única
+        cursor.execute('''
+            INSERT INTO transacoes (
+                titulo, numero_documento, parcela_atual, parcela_total,
+                valor, data_lancamento, data_vencimento, data_competencia,
+                tipo, tipologia, cliente_fornecedor_id, centro_custo_id,
+                empresa_id, plano_financeiro_id, usuario_id,
+                status_negociacao, status_pagamento, municipio, observacao,
+                origem_importacao
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            data['titulo'],
+            data.get('numero_documento'),
+            1,
+            1,
+            float(data['valor']),
+            date.today().isoformat(),
+            data['data_vencimento'],
+            data.get('data_competencia', data['data_vencimento']),
+            data['tipo'],
+            data.get('tipologia'),
+            data['cliente_fornecedor_id'],
+            data['centro_custo_id'],
+            data['empresa_id'],
+            data['plano_financeiro_id'],
+            session['user_id'],
+            data.get('status_negociacao', 'A NEGOCIAR'),
+            data.get('status_pagamento', 'Á realizar'),
+            data.get('municipio'),
+            data.get('observacao'),
+            'manual'
+        ))
+        
+        transacao_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'id': transacao_id,
+            'message': 'Transação criada com sucesso'
+        }), 201
+        
+    except Exception as e:
+        logger.error(f"Erro ao criar transação: {e}")
+        return jsonify({'error': str(e)}), 500
+
+def api_criar_transacoes_parceladas(data):
+    """Cria múltiplas transações parceladas"""
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        parcela_total = int(data['parcela_total'])
+        valor_total = float(data['valor'])
+        valor_parcela = round(valor_total / parcela_total, 2)
+        
+        # Ajustar última parcela para diferenças de arredondamento
+        valor_ultima = valor_total - (valor_parcela * (parcela_total - 1))
+        
+        data_inicial = datetime.strptime(data['data_vencimento'], '%Y-%m-%d')
+        intervalo_dias = int(data.get('intervalo_dias', 30))
+        
+        transacoes_criadas = []
+        transacao_origem_id = None
+        
+        for i in range(parcela_total):
+            parcela_atual = i + 1
+            valor_atual = valor_parcela if i < parcela_total - 1 else valor_ultima
+            
+            # Calcular data de vencimento da parcela
+            if i == 0:
+                data_parcela = data_inicial
+            else:
+                data_parcela = data_inicial + timedelta(days=intervalo_dias * i)
+            
+            # Ajustar título para incluir parcela
+            titulo_parcela = f"{data['titulo']} - Parcela {parcela_atual}/{parcela_total}"
+            
+            cursor.execute('''
+                INSERT INTO transacoes (
+                    titulo, numero_documento, parcela_atual, parcela_total,
+                    valor, data_lancamento, data_vencimento, data_competencia,
+                    tipo, tipologia, cliente_fornecedor_id, centro_custo_id,
+                    empresa_id, plano_financeiro_id, usuario_id,
+                    status_negociacao, status_pagamento, municipio, observacao,
+                    origem_importacao, transacao_origem_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                titulo_parcela,
+                data.get('numero_documento'),
+                parcela_atual,
+                parcela_total,
+                valor_atual,
+                date.today().isoformat(),
+                data_parcela.strftime('%Y-%m-%d'),
+                data_parcela.strftime('%Y-%m-%d'),
+                data['tipo'],
+                data.get('tipologia'),
+                data['cliente_fornecedor_id'],
+                data['centro_custo_id'],
+                data['empresa_id'],
+                data['plano_financeiro_id'],
+                session['user_id'],
+                data.get('status_negociacao', 'A NEGOCIAR'),
+                data.get('status_pagamento', 'Á realizar'),
+                data.get('municipio'),
+                data.get('observacao'),
+                'manual',
+                transacao_origem_id
+            ))
+            
+            transacao_id = cursor.lastrowid
+            
+            # Primeira parcela é a origem
+            if i == 0:
+                transacao_origem_id = transacao_id
+            
+            transacoes_criadas.append({
+                'id': transacao_id,
+                'parcela': parcela_atual,
+                'valor': valor_atual,
+                'data_vencimento': data_parcela.strftime('%Y-%m-%d')
+            })
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'message': f'{parcela_total} parcelas criadas com sucesso',
+            'parcelas': transacoes_criadas
+        }), 201
+        
+    except Exception as e:
+        logger.error(f"Erro ao criar parcelas: {e}")
+        if conn:
+            conn.rollback()
+            conn.close()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/transacoes/<int:id>', methods=['PUT'])
+def api_atualizar_transacao(id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        data = request.get_json()
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Verificar se transação existe
+        cursor.execute('SELECT id FROM transacoes WHERE id = ?', (id,))
+        if not cursor.fetchone():
+            return jsonify({'error': 'Transação não encontrada'}), 404
+        
+        # Validar status se fornecidos
+        if 'status_pagamento' in data or 'status_negociacao' in data:
+            status_validation = validar_status_transacao(
+                data.get('status_pagamento'), 
+                data.get('status_negociacao')
+            )
+            if not status_validation['valid']:
+                return jsonify({'error': '; '.join(status_validation['errors'])}), 400
+        
+        # Construir query de atualização dinamicamente
+        campos = []
+        valores = []
+        
+        campos_permitidos = [
+            'titulo', 'numero_documento', 'valor', 'data_vencimento',
+            'tipo', 'tipologia', 'cliente_fornecedor_id', 'centro_custo_id',
+            'empresa_id', 'plano_financeiro_id', 'status_negociacao',
+            'status_pagamento', 'municipio', 'observacao'
+        ]
+        
+        for campo in campos_permitidos:
+            if campo in data:
+                campos.append(f'{campo} = ?')
+                valores.append(data[campo])
+        
+        if not campos:
+            return jsonify({'error': 'Nenhum campo para atualizar'}), 400
+        
+        # Adicionar timestamp de atualização
+        campos.append('atualizado_em = CURRENT_TIMESTAMP')
+        valores.append(id)
+        
+        query = f"UPDATE transacoes SET {', '.join(campos)} WHERE id = ?"
+        cursor.execute(query, valores)
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'message': 'Transação atualizada com sucesso'}), 200
+        
+    except Exception as e:
+        logger.error(f"Erro ao atualizar transação: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/transacoes/<int:id>', methods=['DELETE'])
+def api_excluir_transacao(id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Verificar se pode excluir (apenas se status = A NEGOCIAR)
+        cursor.execute('''
+            SELECT status_negociacao, status_pagamento 
+            FROM transacoes WHERE id = ?
+        ''', (id,))
+        
+        result = cursor.fetchone()
+        if not result:
+            return jsonify({'error': 'Transação não encontrada'}), 404
+        
+        if result[0] != 'A NEGOCIAR' or result[1] == 'Realizado':
+            return jsonify({'error': 'Transação não pode ser excluída'}), 400
+        
+        # Excluir transação
+        cursor.execute('DELETE FROM transacoes WHERE id = ?', (id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'message': 'Transação excluída com sucesso'}), 200
+        
+    except Exception as e:
+        logger.error(f"Erro ao excluir transação: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/transacoes/parcelas/preview', methods=['POST'])
+def api_preview_parcelas():
+    """Gera preview das parcelas antes de criar"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        valor_total = float(data.get('valor', 0))
+        parcela_total = int(data.get('parcela_total', 1))
+        data_inicial = datetime.strptime(data.get('data_vencimento'), '%Y-%m-%d')
+        intervalo_dias = int(data.get('intervalo_dias', 30))
+        
+        if parcela_total < 1 or valor_total <= 0:
+            return jsonify({'error': 'Valores inválidos'}), 400
+        
+        valor_parcela = round(valor_total / parcela_total, 2)
+        valor_ultima = valor_total - (valor_parcela * (parcela_total - 1))
+        
+        parcelas = []
+        
+        for i in range(parcela_total):
+            parcela_atual = i + 1
+            valor_atual = valor_parcela if i < parcela_total - 1 else valor_ultima
+            
+            if i == 0:
+                data_parcela = data_inicial
+            else:
+                data_parcela = data_inicial + timedelta(days=intervalo_dias * i)
+            
+            parcelas.append({
+                'parcela': f'{parcela_atual}/{parcela_total}',
+                'valor': valor_atual,
+                'data_vencimento': data_parcela.strftime('%Y-%m-%d'),
+                'dia_semana': data_parcela.strftime('%A')
+            })
+        
+        return jsonify({
+            'parcelas': parcelas,
+            'valor_total': valor_total,
+            'quantidade': parcela_total
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+# ====== API AUXILIARES TRANSAÇÕES ======
+@app.route('/api/transacoes/date-range', methods=['GET'])
+def api_date_range():
+    """
+    API para obter o range de datas das transações
+    """
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT MIN(data_vencimento) as min_date, 
+                   MAX(data_vencimento) as max_date
+            FROM transacoes
+            WHERE data_vencimento IS NOT NULL
+        ''')
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        return jsonify({
+            'min_date': result[0] if result[0] else '2023-01-01',
+            'max_date': result[1] if result[1] else datetime.now().strftime('%Y-%m-%d')
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao obter range de datas: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/transacoes/status', methods=['GET'])
+def api_status_transacoes():
+    """Retorna os status válidos para transações"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    return jsonify({
+        'status_pagamento': ['Realizado', 'Á realizar'],
+        'status_negociacao': ['NEGOCIADO', 'PARCIALMENTE NEGOCIADO', 'NÃO NEGOCIADO', 'A NEGOCIAR', 'PAGO'],
+        'status_dinamicos': ['Realizado', 'Á realizar', 'Vencida']
+    })
+
+# ====== API DASHBOARD KPIs ======
+@app.route('/api/dashboard/kpis', methods=['GET'])
+def api_dashboard_kpis():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Mês atual
+        hoje = date.today()
+        primeiro_dia = hoje.replace(day=1)
+        
+        # KPI 1: Receitas do mês
+        cursor.execute('''
+            SELECT COALESCE(SUM(valor), 0) as total
+            FROM transacoes
+            WHERE tipo IN ('Receita', 'Entrada')
+            AND strftime('%Y-%m', data_vencimento) = strftime('%Y-%m', 'now')
+            AND status_pagamento != 'Cancelado'
+        ''')
+        receitas_mes = float(cursor.fetchone()[0])
+        
+        # KPI 2: Despesas do mês
+        cursor.execute('''
+            SELECT COALESCE(SUM(valor), 0) as total
+            FROM transacoes
+            WHERE tipo IN ('Despesa', 'Saída')
+            AND strftime('%Y-%m', data_vencimento) = strftime('%Y-%m', 'now')
+            AND status_pagamento != 'Cancelado'
+        ''')
+        despesas_mes = float(cursor.fetchone()[0])
+        
+        # KPI 3: Saldo total (todas as transações realizadas)
+        cursor.execute('''
+            SELECT 
+                COALESCE(SUM(CASE WHEN tipo IN ('Receita', 'Entrada') THEN valor ELSE 0 END), 0) -
+                COALESCE(SUM(CASE WHEN tipo IN ('Despesa', 'Saída') THEN valor ELSE 0 END), 0) as saldo
+            FROM transacoes
+            WHERE status_pagamento = 'Realizado'
+        ''')
+        saldo_total = float(cursor.fetchone()[0])
+        
+        # KPI 4: Total de transações
+        cursor.execute('SELECT COUNT(*) FROM transacoes')
+        total_transacoes = cursor.fetchone()[0]
+        
+        # Contas a vencer (próximos 7 dias)
+        cursor.execute('''
+            SELECT COUNT(*) as qtd, COALESCE(SUM(valor), 0) as total
+            FROM transacoes
+            WHERE status_pagamento = 'Á realizar'
+            AND data_vencimento BETWEEN date('now') AND date('now', '+7 days')
+        ''')
+        result = cursor.fetchone()
+        contas_vencer = result[0]
+        valor_vencer = float(result[1])
+        
+        # Últimas 5 transações
+        cursor.execute('''
+            SELECT t.id, t.titulo, t.valor, t.tipo, t.data_vencimento,
+                   f.nome as fornecedor_nome
+            FROM transacoes t
+            LEFT JOIN fornecedores f ON t.cliente_fornecedor_id = f.id
+            ORDER BY t.criado_em DESC
+            LIMIT 5
+        ''')
+        
+        ultimas_transacoes = []
+        for row in cursor.fetchall():
+            ultimas_transacoes.append({
+                'id': row[0],
+                'titulo': row[1],
+                'valor': float(row[2]),
+                'tipo': row[3],
+                'data_vencimento': row[4],
+                'fornecedor_nome': row[5]
+            })
+        
+        # Gráfico receitas x despesas (últimos 6 meses)
+        cursor.execute('''
+            SELECT 
+                strftime('%Y-%m', data_vencimento) as mes,
+                SUM(CASE WHEN tipo IN ('Receita', 'Entrada') THEN valor ELSE 0 END) as receitas,
+                SUM(CASE WHEN tipo IN ('Despesa', 'Saída') THEN valor ELSE 0 END) as despesas
+            FROM transacoes
+            WHERE data_vencimento >= date('now', '-6 months')
+            AND status_pagamento != 'Cancelado'
+            GROUP BY strftime('%Y-%m', data_vencimento)
+            ORDER BY mes
+        ''')
+        
+        grafico_mensal = []
+        for row in cursor.fetchall():
+            grafico_mensal.append({
+                'mes': row[0],
+                'receitas': float(row[1]),
+                'despesas': float(row[2])
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'receitas_mes': receitas_mes,
+            'despesas_mes': despesas_mes,
+            'saldo_total': saldo_total,
+            'total_transacoes': total_transacoes,
+            'contas_vencer': contas_vencer,
+            'valor_vencer': valor_vencer,
+            'ultimas_transacoes': ultimas_transacoes,
+            'grafico_mensal': grafico_mensal
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao buscar KPIs: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/dashboard/resumo_centros', methods=['GET'])
+def api_resumo_centros_custo():
+    """Resumo por centro de custo para o dashboard"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT 
+                cc.mascara_cc as centro_nome,
+                SUM(CASE WHEN t.tipo IN ('Receita', 'Entrada') THEN t.valor ELSE 0 END) as receitas,
+                SUM(CASE WHEN t.tipo IN ('Despesa', 'Saída') THEN t.valor ELSE 0 END) as despesas,
+                COUNT(t.id) as total_transacoes
+            FROM transacoes t
+            JOIN centros_custo cc ON t.centro_custo_id = cc.id
+            WHERE strftime('%Y-%m', t.data_vencimento) = strftime('%Y-%m', 'now')
+            GROUP BY cc.id, cc.mascara_cc
+            ORDER BY (receitas - despesas) DESC
+            LIMIT 5
+        ''')
+        
+        resumo_centros = []
+        for row in cursor.fetchall():
+            receitas = float(row[1])
+            despesas = float(row[2])
+            resumo_centros.append({
+                'centro_nome': row[0],
+                'receitas': receitas,
+                'despesas': despesas,
+                'saldo': receitas - despesas,
+                'total_transacoes': row[3]
+            })
+        
+        conn.close()
+        
+        return jsonify(resumo_centros)
+        
+    except Exception as e:
+        logger.error(f"Erro ao buscar resumo centros: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

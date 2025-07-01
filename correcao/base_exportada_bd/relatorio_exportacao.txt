@@ -1,0 +1,20 @@
+RELATÓRIO DE EXPORTAÇÃO - BANCO DE DADOS SELLETA
+==================================================
+Data/Hora: 01/07/2025 às 13:23:35
+Banco origem: ../../selleta_main.db
+Destino: ../base_exportada_bd
+Tabelas exportadas: 10
+Total de registros: 29,956
+
+DETALHAMENTO POR TABELA:
+------------------------------
+backup_plano_financeiro_original: 193 registros
+centros_custo: 132 registros
+clientes_fornecedores: 0 registros
+conta_bancaria: 55 registros
+empresas: 7 registros
+fornecedores: 2,083 registros
+plano_financeiro: 124 registros
+sqlite_sequence: 7 registros
+transacoes: 27,353 registros
+usuarios: 2 registros

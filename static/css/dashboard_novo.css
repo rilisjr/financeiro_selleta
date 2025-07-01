@@ -212,7 +212,7 @@ body {
 
 /* Sidebar */
 .sidebar {
-  width: 280px;
+  width: 320px;
   background: var(--selleta-white);
   border-right: 1px solid var(--selleta-gray-200);
   padding: 20px 0;
@@ -315,7 +315,7 @@ body {
 /* Main Content */
 .main-content {
   flex: 1;
-  margin-left: 280px;
+  margin-left: 320px;
   padding: 30px;
   background-color: var(--selleta-gray-50);
 }

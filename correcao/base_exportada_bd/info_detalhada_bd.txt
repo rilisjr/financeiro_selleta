@@ -1,0 +1,205 @@
+INFORMAÇÕES DETALHADAS - BANCO DE DADOS SELLETA
+=======================================================
+Gerado em: 01/07/2025 às 13:23:35
+
+TOTAL DE TABELAS: 10
+------------------------------
+
+TABELA: backup_plano_financeiro_original
+--------------------
+Registros: 193
+Colunas: 10
+Estrutura:
+  - id: INT
+  - codigo: TEXT
+  - nome: TEXT
+  - nivel: INT
+  - tipo: TEXT
+  - plano_pai_id: INT
+  - ativo: NUM
+  - criado_em: NUM
+  - atualizado_em: NUM
+  - referencia: TEXT
+
+TABELA: centros_custo
+--------------------
+Registros: 132
+Colunas: 10
+Estrutura:
+  - id: INTEGER (PK)
+  - centro_custo_original: VARCHAR(200) (NOT NULL)
+  - mascara_cc: VARCHAR(200) (NOT NULL)
+  - empresa_id: INTEGER (NOT NULL)
+  - tipologia: VARCHAR(50) (NOT NULL)
+  - categoria: VARCHAR(20) (NOT NULL)
+  - descricao: TEXT
+  - ativo: INTEGER
+  - data_criacao: DATETIME
+  - data_atualizacao: DATETIME
+Foreign Keys:
+  - empresa_id → empresas.id
+
+TABELA: clientes_fornecedores
+--------------------
+Registros: 0
+Colunas: 16
+Estrutura:
+  - id: INTEGER (PK)
+  - nome: VARCHAR(200) (NOT NULL)
+  - tipo_pessoa: CHAR(2) (NOT NULL)
+  - cpf_cnpj: VARCHAR(20)
+  - tipo_cadastro: VARCHAR(20)
+  - endereco: TEXT
+  - municipio: VARCHAR(100)
+  - estado: CHAR(2)
+  - cep: VARCHAR(10)
+  - telefone: VARCHAR(20)
+  - email: VARCHAR(150)
+  - inscricao_estadual: VARCHAR(30)
+  - observacoes: TEXT
+  - ativo: BOOLEAN
+  - criado_em: TIMESTAMP
+  - atualizado_em: TIMESTAMP
+
+TABELA: conta_bancaria
+--------------------
+Registros: 55
+Colunas: 12
+Estrutura:
+  - id: INTEGER (PK)
+  - agencia: TEXT (NOT NULL)
+  - banco: TEXT
+  - conta_corrente: TEXT (NOT NULL)
+  - empresa: TEXT (NOT NULL)
+  - mascara: TEXT
+  - tipo_conta: TEXT
+  - ativo: BOOLEAN
+  - created_at: TIMESTAMP
+  - updated_at: TIMESTAMP
+  - saldo_inicial: REAL
+  - status_conta: TEXT
+
+TABELA: empresas
+--------------------
+Registros: 7
+Colunas: 12
+Estrutura:
+  - id: INTEGER (PK)
+  - codigo: VARCHAR(10) (NOT NULL)
+  - nome: VARCHAR(200) (NOT NULL)
+  - grupo: VARCHAR(100)
+  - cnpj: VARCHAR(20)
+  - endereco: TEXT
+  - municipio: VARCHAR(100)
+  - cep: VARCHAR(10)
+  - telefone: VARCHAR(20)
+  - ativo: INTEGER
+  - data_criacao: DATETIME
+  - data_atualizacao: DATETIME
+
+TABELA: fornecedores
+--------------------
+Registros: 2,083
+Colunas: 23
+Estrutura:
+  - id: INTEGER (PK)
+  - nome: VARCHAR(255) (NOT NULL)
+  - nome_original: TEXT
+  - cnpj_cpf: VARCHAR(20)
+  - origem: VARCHAR(50)
+  - tipo_fornecedor: VARCHAR(30)
+  - agencia: VARCHAR(10)
+  - banco: VARCHAR(100)
+  - conta: VARCHAR(20)
+  - chave_pix: VARCHAR(100)
+  - tipo_conta: VARCHAR(30)
+  - favorecido: VARCHAR(255)
+  - cpf_cnpj_favorecido: VARCHAR(20)
+  - descricao: TEXT
+  - metodo_deteccao: VARCHAR(50)
+  - similaridade: DECIMAL(5,3)
+  - deteccao_forcada: BOOLEAN
+  - deteccao_corrigida: BOOLEAN
+  - observacoes: TEXT
+  - valor_total_movimentado: DECIMAL(15,2)
+  - total_transacoes: INTEGER
+  - data_criacao: TIMESTAMP
+  - ativo: BOOLEAN
+
+TABELA: plano_financeiro
+--------------------
+Registros: 124
+Colunas: 10
+Estrutura:
+  - id: INTEGER (PK)
+  - codigo: VARCHAR(20) (NOT NULL)
+  - nome: VARCHAR(150) (NOT NULL)
+  - nivel: INTEGER (NOT NULL)
+  - tipo: VARCHAR(20)
+  - plano_pai_id: INTEGER
+  - ativo: BOOLEAN
+  - criado_em: TIMESTAMP
+  - atualizado_em: TIMESTAMP
+  - referencia: VARCHAR(50)
+Foreign Keys:
+  - plano_pai_id → plano_financeiro.id
+
+TABELA: sqlite_sequence
+--------------------
+Registros: 7
+Colunas: 2
+Estrutura:
+  - name: 
+  - seq: 
+
+TABELA: transacoes
+--------------------
+Registros: 27,353
+Colunas: 23
+Estrutura:
+  - id: INTEGER (PK)
+  - titulo: VARCHAR(200) (NOT NULL)
+  - numero_documento: VARCHAR(50)
+  - parcela_atual: INTEGER
+  - parcela_total: INTEGER
+  - valor: DECIMAL(15,2) (NOT NULL)
+  - data_lancamento: DATE (NOT NULL)
+  - data_vencimento: DATE (NOT NULL)
+  - data_competencia: DATE
+  - tipo: VARCHAR(20) (NOT NULL)
+  - tipologia: VARCHAR(50)
+  - cliente_fornecedor_id: INTEGER
+  - centro_custo_id: INTEGER (NOT NULL)
+  - empresa_id: INTEGER (NOT NULL)
+  - plano_financeiro_id: INTEGER (NOT NULL)
+  - usuario_id: INTEGER (NOT NULL)
+  - status_negociacao: VARCHAR(20)
+  - status_pagamento: VARCHAR(20)
+  - municipio: VARCHAR(100)
+  - observacao: TEXT
+  - origem_importacao: VARCHAR(50)
+  - criado_em: TIMESTAMP
+  - atualizado_em: TIMESTAMP
+Foreign Keys:
+  - usuario_id → usuarios.id
+  - plano_financeiro_id → plano_financeiro.id
+  - empresa_id → empresas.id
+  - centro_custo_id → centros_custo.id
+
+TABELA: usuarios
+--------------------
+Registros: 2
+Colunas: 9
+Estrutura:
+  - id: INTEGER (PK)
+  - username: VARCHAR(50) (NOT NULL)
+  - senha: TEXT (NOT NULL)
+  - nome_completo: VARCHAR(150)
+  - email: VARCHAR(150)
+  - ativo: BOOLEAN
+  - perfil: VARCHAR(20)
+  - criado_em: TIMESTAMP
+  - atualizado_em: TIMESTAMP
+
+========================================
+TOTAL GERAL DE REGISTROS: 29,956
