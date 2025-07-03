@@ -2404,6 +2404,29 @@ def api_nova_transacao():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
+@app.route('/api/transacao/proximo-id', methods=['GET'])
+def api_proximo_id():
+    """Retorna o próximo ID para nova transação"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT MAX(id) FROM transacoes")
+        max_id = cursor.fetchone()[0] or 0
+        proximo_id = max_id + 1
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'proximo_id': proximo_id
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/api/transacao/<int:transacao_id>/baixa', methods=['POST'])
 def api_realizar_baixa(transacao_id):
     """Realiza baixa de uma transação"""
@@ -2498,7 +2521,7 @@ def api_get_contas_bancarias():
         cursor = conn.cursor()
         
         cursor.execute("""
-            SELECT id, banco, agencia, conta_corrente, tipo_conta, status_conta
+            SELECT id, banco, agencia, conta_corrente, tipo_conta, status_conta, empresa, saldo_inicial
             FROM conta_bancaria
             WHERE status_conta = 'Ativa' AND ativo = 1
             ORDER BY banco, conta_corrente
@@ -2512,7 +2535,9 @@ def api_get_contas_bancarias():
                 'agencia': row[2] or '',
                 'conta': row[3] or '',
                 'tipo': row[4] or '',
-                'status': row[5] or ''
+                'status': row[5] or '',
+                'empresa': row[6] or '',
+                'saldo_inicial': row[7] or 0
             })
         
         conn.close()

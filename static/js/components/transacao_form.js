@@ -130,7 +130,10 @@ class TransacaoForm {
                                     <label for="transacao-titulo">
                                         Título <span class="required">*</span>
                                     </label>
-                                    <input type="text" id="transacao-titulo" class="form-input" required>
+                                    <input type="text" id="transacao-titulo" class="form-input" readonly 
+                                           placeholder="Será gerado automaticamente..." 
+                                           style="background-color: #f8f9fa; cursor: not-allowed;" 
+                                           title="Título gerado automaticamente baseado no ID">
                                 </div>
                                 <div class="form-group">
                                     <label for="transacao-numero-documento">Número do Documento:</label>
@@ -144,9 +147,22 @@ class TransacaoForm {
                                     <label for="transacao-fornecedor">
                                         Fornecedor <span class="required">*</span>
                                     </label>
-                                    <select id="transacao-fornecedor" class="form-select" required>
-                                        <option value="">Carregando...</option>
-                                    </select>
+                                    <div class="search-container">
+                                        <input type="text" 
+                                               id="transacao-fornecedor" 
+                                               class="form-input search-input" 
+                                               placeholder="Digite para buscar fornecedor..." 
+                                               autocomplete="off" 
+                                               required>
+                                        <div class="search-results" id="fornecedor-search-results" style="display: none;">
+                                            <!-- Resultados da busca aparecerão aqui -->
+                                        </div>
+                                        <input type="hidden" id="transacao-fornecedor-id" name="fornecedor_id" value="">
+                                        <div class="search-selected" id="fornecedor-selected" style="display: none;">
+                                            <span class="search-selected-name"></span>
+                                            <button type="button" class="search-clear" onclick="clearFornecedorSelection()">×</button>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="form-group">
                                     <label for="transacao-empresa">
@@ -164,17 +180,43 @@ class TransacaoForm {
                                     <label for="transacao-plano">
                                         Plano Financeiro <span class="required">*</span>
                                     </label>
-                                    <select id="transacao-plano" class="form-select" required>
-                                        <option value="">Carregando...</option>
-                                    </select>
+                                    <div class="search-container">
+                                        <input type="text" 
+                                               id="transacao-plano" 
+                                               class="form-input search-input" 
+                                               placeholder="Digite para buscar plano financeiro..." 
+                                               autocomplete="off" 
+                                               required>
+                                        <div class="search-results" id="plano-search-results" style="display: none;">
+                                            <!-- Resultados da busca aparecerão aqui -->
+                                        </div>
+                                        <input type="hidden" id="transacao-plano-id" name="plano_id" value="">
+                                        <div class="search-selected" id="plano-selected" style="display: none;">
+                                            <span class="search-selected-name"></span>
+                                            <button type="button" class="search-clear" onclick="clearPlanoSelection()">×</button>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="form-group">
                                     <label for="transacao-centro">
                                         Centro de Custo <span class="required">*</span>
                                     </label>
-                                    <select id="transacao-centro" class="form-select" required>
-                                        <option value="">Carregando...</option>
-                                    </select>
+                                    <div class="search-container">
+                                        <input type="text" 
+                                               id="transacao-centro" 
+                                               class="form-input search-input" 
+                                               placeholder="Digite para buscar centro de custo..." 
+                                               autocomplete="off" 
+                                               required>
+                                        <div class="search-results" id="centro-search-results" style="display: none;">
+                                            <!-- Resultados da busca aparecerão aqui -->
+                                        </div>
+                                        <input type="hidden" id="transacao-centro-id" name="centro_id" value="">
+                                        <div class="search-selected" id="centro-selected" style="display: none;">
+                                            <span class="search-selected-name"></span>
+                                            <button type="button" class="search-clear" onclick="clearCentroSelection()">×</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -208,25 +250,7 @@ class TransacaoForm {
                                 </div>
                             </div>
                             
-                            <!-- Linha 5: Status -->
-                            <div class="form-grid-2">
-                                <div class="form-group">
-                                    <label for="transacao-status-negociacao">Status Negociação:</label>
-                                    <select id="transacao-status-negociacao" class="form-select">
-                                        <option value="Aprovado">Aprovado</option>
-                                        <option value="Em Análise">Em Análise</option>
-                                        <option value="Cancelado">Cancelado</option>
-                                        <option value="Pendente">Pendente</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="transacao-status-pagamento">Status Pagamento:</label>
-                                    <select id="transacao-status-pagamento" class="form-select">
-                                        <option value="A Realizar">A Realizar</option>
-                                        <option value="Realizado">Realizado</option>
-                                    </select>
-                                </div>
-                            </div>
+                            <!-- Status campos removidos - serão definidos automaticamente no backend -->
                             
                             <!-- Observações -->
                             <div class="form-group">
@@ -438,6 +462,9 @@ class TransacaoForm {
         // Mudança de tipo (entrada/saída)
         this.elements.tipo.addEventListener('change', () => this.onTipoChange());
         
+        // Inicializar sistema de busca autocomplete
+        this.initSearchAutocomplete();
+        
         // Baixa parcial
         this.elements.baixaParcialCheck.addEventListener('change', () => this.onBaixaParcialChange());
         
@@ -446,7 +473,7 @@ class TransacaoForm {
         
         // Botões de ação
         this.elements.btnSalvar.addEventListener('click', () => this.salvar());
-        this.elements.btnBaixa.addEventListener('click', () => this.abrirModalBaixa());
+        this.elements.btnBaixa.addEventListener('click', () => this.handleBaixaButtonClick());
     }
     
     /**
@@ -488,7 +515,20 @@ class TransacaoForm {
                 fetch('/api/fornecedores/buscar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).then(r => r.json()),
                 fetch('/api/plano-financeiro').then(r => r.json()),
                 fetch('/api/centros-custo').then(r => r.json()),
-                fetch('/api/contas-bancarias').then(r => r.json()).catch(() => ({ data: [] }))
+                fetch('/api/contas-bancarias').then(async r => {
+                    console.log('🏦 Status da API contas-bancarias:', r.status);
+                    if (!r.ok) {
+                        const errorText = await r.text();
+                        console.error('❌ Erro na API contas-bancarias:', r.status, errorText);
+                        return { data: [], error: `${r.status}: ${errorText}` };
+                    }
+                    const data = await r.json();
+                    console.log('✅ API contas-bancarias OK:', data);
+                    return data;
+                }).catch(err => {
+                    console.error('❌ Erro de rede na API contas-bancarias:', err);
+                    return { data: [], error: err.message };
+                })
             ]);
             
             console.log('📊 Dados recebidos das APIs:');
@@ -497,6 +537,7 @@ class TransacaoForm {
             console.log('   - Planos:', planos.data?.length || planos.length);
             console.log('   - Centros:', centros.data?.length || centros.length);
             console.log('   - Contas:', contas.data?.length || contas.length);
+            console.log('🏦 Contas bancárias detalhadas:', contas.data || contas);
             
             // Preencher selects
             console.log('🔧 Populando selects...');
@@ -504,7 +545,26 @@ class TransacaoForm {
             this.populateSelect(this.elements.fornecedor, fornecedores.data || fornecedores, 'id', 'nome');
             this.populateSelect(this.elements.plano, planos.data || planos, 'id', item => `${item.codigo} - ${item.nome}`);
             this.populateSelect(this.elements.centro, centros.data || centros, 'id', item => `${item.mascara_cc} - ${item.centro_custo_original || item.nome || 'N/A'}`);
-            this.populateSelect(this.elements.baixaContaBancaria, contas.data || contas, 'id', item => `${item.banco || 'N/A'} - Ag: ${item.agencia || 'N/A'} - CC: ${item.conta || 'N/A'}`);
+            // Carregar contas bancárias
+            const contasData = contas.data || contas;
+            if (contasData.length > 0) {
+                console.log('🏦 Populando contas bancárias:', contasData.length, 'contas');
+                this.populateSelect(this.elements.baixaContaBancaria, contasData, 'id', item => {
+                    const banco = (item.banco || 'N/A').substring(0, 25);
+                    const agencia = item.agencia || 'N/A';
+                    const conta = item.conta || 'N/A';
+                    const empresa = item.empresa ? ` (${item.empresa.substring(0, 15)})` : '';
+                    return `${banco} - Ag: ${agencia} - CC: ${conta}${empresa}`;
+                });
+            } else {
+                console.warn('⚠️ Nenhuma conta bancária disponível');
+                if (this.elements.baixaContaBancaria) {
+                    this.elements.baixaContaBancaria.innerHTML = '<option value="">Nenhuma conta ativa encontrada</option>';
+                }
+                if (contas.error) {
+                    console.error('🚨 Erro nas contas bancárias:', contas.error);
+                }
+            }
             
             console.log('✅ Selects populados com sucesso');
             
@@ -518,16 +578,304 @@ class TransacaoForm {
      * Popula um select com dados
      */
     populateSelect(selectElement, data, valueField, textField) {
-        if (!selectElement || !data) return;
+        if (!selectElement) {
+            console.warn('⚠️ Elemento select não encontrado');
+            return;
+        }
         
+        if (!data || !Array.isArray(data) || data.length === 0) {
+            console.warn('⚠️ Dados do select vazios ou inválidos:', data);
+            selectElement.innerHTML = '<option value="">Nenhum dado disponível</option>';
+            return;
+        }
+        
+        console.log(`🔧 Populando select com ${data.length} itens`);
+        
+        // Limpar select
         selectElement.innerHTML = '<option value="">Selecione...</option>';
         
-        data.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item[valueField];
-            option.textContent = typeof textField === 'function' ? textField(item) : item[textField];
-            selectElement.appendChild(option);
+        // Adicionar opções
+        data.forEach((item, index) => {
+            try {
+                const option = document.createElement('option');
+                option.value = item[valueField];
+                option.textContent = typeof textField === 'function' ? textField(item) : item[textField];
+                selectElement.appendChild(option);
+                
+                // Log apenas dos primeiros 3 itens para não poluir o console
+                if (index < 3) {
+                    console.log(`   • Item ${index + 1}: ${option.value} - ${option.textContent}`);
+                }
+            } catch (error) {
+                console.error(`❌ Erro ao processar item ${index}:`, item, error);
+            }
         });
+        
+        console.log(`✅ Select populado com ${data.length} opções`);
+    }
+    
+    /**
+     * Inicializa sistema de busca autocomplete para os campos
+     */
+    initSearchAutocomplete() {
+        console.log('🔍 Inicializando sistemas de busca autocomplete...');
+        
+        // Fornecedor
+        const fornecedorInput = document.getElementById('transacao-fornecedor');
+        if (fornecedorInput) {
+            fornecedorInput.addEventListener('input', (e) => this.handleSearchInput(e, 'fornecedor'));
+            fornecedorInput.addEventListener('focus', (e) => this.handleSearchFocus(e, 'fornecedor'));
+            fornecedorInput.addEventListener('blur', (e) => this.handleSearchBlur(e, 'fornecedor'));
+        }
+        
+        // Plano Financeiro
+        const planoInput = document.getElementById('transacao-plano');
+        if (planoInput) {
+            planoInput.addEventListener('input', (e) => this.handleSearchInput(e, 'plano'));
+            planoInput.addEventListener('focus', (e) => this.handleSearchFocus(e, 'plano'));
+            planoInput.addEventListener('blur', (e) => this.handleSearchBlur(e, 'plano'));
+        }
+        
+        // Centro de Custo
+        const centroInput = document.getElementById('transacao-centro');
+        if (centroInput) {
+            centroInput.addEventListener('input', (e) => this.handleSearchInput(e, 'centro'));
+            centroInput.addEventListener('focus', (e) => this.handleSearchFocus(e, 'centro'));
+            centroInput.addEventListener('blur', (e) => this.handleSearchBlur(e, 'centro'));
+        }
+        
+        console.log('✅ Sistemas de busca autocomplete inicializados');
+    }
+    
+    /**
+     * Manipula entrada de texto na busca
+     */
+    handleSearchInput(event, type) {
+        const query = event.target.value.trim();
+        
+        // Limpar timeout anterior
+        if (this.searchTimeouts && this.searchTimeouts[type]) {
+            clearTimeout(this.searchTimeouts[type]);
+        }
+        
+        // Inicializar searchTimeouts se não existir
+        if (!this.searchTimeouts) {
+            this.searchTimeouts = {};
+        }
+        
+        // Se query muito pequena, esconder resultados
+        if (query.length < 2) {
+            this.hideSearchResults(type);
+            return;
+        }
+        
+        // Delay para evitar muitas requisições
+        this.searchTimeouts[type] = setTimeout(() => {
+            this.performSearch(query, type);
+        }, 300);
+    }
+    
+    /**
+     * Manipula foco no campo de busca
+     */
+    handleSearchFocus(event, type) {
+        const query = event.target.value.trim();
+        if (query.length >= 2) {
+            this.showSearchResults(type);
+        }
+    }
+    
+    /**
+     * Manipula perda de foco no campo de busca
+     */
+    handleSearchBlur(event, type) {
+        // Delay para permitir clique nos resultados
+        setTimeout(() => {
+            this.hideSearchResults(type);
+        }, 200);
+    }
+    
+    /**
+     * Executa a busca na API
+     */
+    async performSearch(query, type) {
+        try {
+            console.log(`🔍 Buscando ${type}:`, query);
+            
+            // URLs das APIs
+            const apiUrls = {
+                fornecedor: '/api/fornecedores',
+                plano: '/api/plano-financeiro',
+                centro: '/api/centros-custo'
+            };
+            
+            // Verificar cache primeiro
+            if (!this.searchCaches) {
+                this.searchCaches = {};
+            }
+            
+            if (!this.searchCaches[type + 's']) {
+                const response = await fetch(apiUrls[type]);
+                if (!response.ok) throw new Error(`Erro na API: ${response.status}`);
+                
+                const data = await response.json();
+                this.searchCaches[type + 's'] = data.success ? data.data : (data.data || data);
+            }
+            
+            // Filtrar resultados localmente
+            const allItems = this.searchCaches[type + 's'];
+            const filteredItems = this.filterItems(allItems, query, type);
+            
+            // Exibir resultados
+            this.displaySearchResults(filteredItems, type);
+            
+        } catch (error) {
+            console.error(`❌ Erro na busca de ${type}:`, error);
+            this.showSearchError(type);
+        }
+    }
+    
+    /**
+     * Filtra itens baseado na query
+     */
+    filterItems(items, query, type) {
+        const queryLower = query.toLowerCase();
+        
+        return items.filter(item => {
+            switch (type) {
+                case 'fornecedor':
+                    return item.nome && item.nome.toLowerCase().includes(queryLower);
+                case 'plano':
+                    return (item.codigo && item.codigo.toLowerCase().includes(queryLower)) ||
+                           (item.descricao && item.descricao.toLowerCase().includes(queryLower));
+                case 'centro':
+                    return (item.nome && item.nome.toLowerCase().includes(queryLower)) ||
+                           (item.codigo && item.codigo.toLowerCase().includes(queryLower));
+                default:
+                    return false;
+            }
+        }).slice(0, 10); // Limitar a 10 resultados
+    }
+    
+    /**
+     * Exibe resultados da busca
+     */
+    displaySearchResults(items, type) {
+        const resultsContainer = document.getElementById(`${type}-search-results`);
+        if (!resultsContainer) return;
+        
+        if (items.length === 0) {
+            resultsContainer.innerHTML = '<div class="search-no-results">Nenhum resultado encontrado</div>';
+        } else {
+            const resultsHTML = items.map(item => this.createSearchResultItem(item, type)).join('');
+            resultsContainer.innerHTML = resultsHTML;
+        }
+        
+        this.showSearchResults(type);
+    }
+    
+    /**
+     * Cria HTML de um item de resultado
+     */
+    createSearchResultItem(item, type) {
+        let displayText = '';
+        let secondaryText = '';
+        
+        switch (type) {
+            case 'fornecedor':
+                displayText = item.nome || 'Nome não informado';
+                secondaryText = item.cpf_cnpj ? ` - ${item.cpf_cnpj}` : '';
+                break;
+            case 'plano':
+                displayText = item.codigo || 'Código não informado';
+                secondaryText = item.descricao ? ` - ${item.descricao}` : '';
+                break;
+            case 'centro':
+                displayText = item.nome || 'Nome não informado';
+                secondaryText = item.tipologia ? ` (${item.tipologia})` : '';
+                break;
+        }
+        
+        return `
+            <div class="search-result-item" onclick="window.currentTransacaoForm.selectSearchItem(${item.id}, '${type}', '${displayText.replace(/'/g, "\\'")}')">
+                <div class="search-result-main">${displayText}</div>
+                <div class="search-result-secondary">${secondaryText}</div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Seleciona um item da busca
+     */
+    selectSearchItem(id, type, displayText) {
+        console.log(`✅ Item selecionado - ${type}:`, id, displayText);
+        
+        // Preencher campos
+        const input = document.getElementById(`transacao-${type}`);
+        const hiddenInput = document.getElementById(`transacao-${type}-id`);
+        const selectedDiv = document.getElementById(`${type}-selected`);
+        const selectedName = selectedDiv?.querySelector('.search-selected-name');
+        
+        if (input) input.value = displayText;
+        if (hiddenInput) hiddenInput.value = id;
+        
+        if (selectedDiv && selectedName) {
+            selectedName.textContent = displayText;
+            selectedDiv.style.display = 'block';
+            input.style.display = 'none';
+        }
+        
+        // Esconder resultados
+        this.hideSearchResults(type);
+    }
+    
+    /**
+     * Limpa seleção do campo de busca
+     */
+    clearSearchSelection(type) {
+        const input = document.getElementById(`transacao-${type}`);
+        const hiddenInput = document.getElementById(`transacao-${type}-id`);
+        const selectedDiv = document.getElementById(`${type}-selected`);
+        
+        if (input) {
+            input.value = '';
+            input.style.display = 'block';
+        }
+        if (hiddenInput) hiddenInput.value = '';
+        if (selectedDiv) selectedDiv.style.display = 'none';
+        
+        this.hideSearchResults(type);
+    }
+    
+    /**
+     * Mostra resultados da busca
+     */
+    showSearchResults(type) {
+        const resultsContainer = document.getElementById(`${type}-search-results`);
+        if (resultsContainer) {
+            resultsContainer.style.display = 'block';
+        }
+    }
+    
+    /**
+     * Esconde resultados da busca
+     */
+    hideSearchResults(type) {
+        const resultsContainer = document.getElementById(`${type}-search-results`);
+        if (resultsContainer) {
+            resultsContainer.style.display = 'none';
+        }
+    }
+    
+    /**
+     * Mostra erro na busca
+     */
+    showSearchError(type) {
+        const resultsContainer = document.getElementById(`${type}-search-results`);
+        if (resultsContainer) {
+            resultsContainer.innerHTML = '<div class="search-error">Erro ao carregar dados</div>';
+            this.showSearchResults(type);
+        }
     }
     
     /**
@@ -650,6 +998,12 @@ class TransacaoForm {
                 this.elements.id.parentElement.style.display = 'none';
                 this.elements.btnSalvar.innerHTML = '<i class="fas fa-plus"></i> Criar Transação';
                 this.elements.footerInfo.textContent = 'Preencha os campos obrigatórios para criar a transação';
+                
+                // Gerar título automático
+                this.gerarTituloAutomatico();
+                
+                // Verificar e recarregar selects se necessário
+                this.verificarSelectsCarregados();
                 break;
                 
             case 'search':
@@ -1074,9 +1428,26 @@ class TransacaoForm {
     }
     
     /**
+     * Gerencia o clique do botão de baixa baseado no modo atual
+     */
+    handleBaixaButtonClick() {
+        console.log('🎯 Botão baixa clicado - Modo atual:', this.state.mode);
+        
+        if (this.state.mode === 'baixa') {
+            // Se já está no modo baixa, executa a baixa
+            console.log('💰 Executando baixa da transação...');
+            this.realizarBaixa();
+        } else {
+            // Se está em outro modo, abre o modal de baixa
+            console.log('📋 Abrindo modal de baixa...');
+            this.abrirModalBaixa();
+        }
+    }
+    
+    /**
      * Abre modal de baixa a partir do modo edição
      */
-    abrirModalBaixa() {
+    async abrirModalBaixa() {
         console.log('💳 Abrindo modal de baixa...');
         
         // Verificar se transação já foi paga
@@ -1092,12 +1463,146 @@ class TransacaoForm {
         // Reconfigurar interface
         this.setupModeInterface();
         
+        // Carregar contas bancárias se ainda não foram carregadas
+        await this.loadContasBancarias();
+        
         // Focar no primeiro campo de baixa
         setTimeout(() => {
             if (this.elements.baixaDataPagamento) {
                 this.elements.baixaDataPagamento.focus();
             }
         }, 100);
+    }
+    
+    /**
+     * Verifica se os selects estão carregados e recarrega se necessário
+     */
+    async verificarSelectsCarregados() {
+        console.log('🔍 Verificando se selects estão carregados...');
+        
+        const selects = [
+            { element: this.elements.empresa, name: 'Empresa' },
+            { element: this.elements.fornecedor, name: 'Fornecedor' },
+            { element: this.elements.plano, name: 'Plano Financeiro' },
+            { element: this.elements.centro, name: 'Centro de Custo' }
+        ];
+        
+        let precisaRecarregar = false;
+        
+        selects.forEach(select => {
+            const optionsCount = select.element?.options?.length || 0;
+            const temCarregando = select.element?.innerHTML?.includes('Carregando') || false;
+            const temSelecione = select.element?.innerHTML?.includes('Selecione') || false;
+            
+            console.log(`   • ${select.name}: ${optionsCount} opções, carregando: ${temCarregando}, selecione: ${temSelecione}`);
+            
+            if (optionsCount <= 1 || temCarregando) {
+                console.warn(`   ⚠️ ${select.name} precisa ser recarregado`);
+                precisaRecarregar = true;
+            }
+        });
+        
+        if (precisaRecarregar) {
+            console.log('🔄 Recarregando dados dos selects...');
+            await this.loadSelectOptions();
+        } else {
+            console.log('✅ Todos os selects estão carregados');
+        }
+    }
+    
+    /**
+     * Gera título automático para nova transação
+     */
+    async gerarTituloAutomatico() {
+        try {
+            console.log('🔤 Gerando título automático...');
+            
+            // Buscar próximo ID
+            const response = await fetch('/api/transacao/proximo-id');
+            if (response.ok) {
+                const data = await response.json();
+                const proximoId = data.proximo_id || 'NOVO';
+                const titulo = `ID-${proximoId}`;
+                
+                console.log(`✅ Título gerado: ${titulo}`);
+                this.elements.titulo.value = titulo;
+            } else {
+                // Fallback se API não existir
+                const titulo = `ID-${Date.now()}`;
+                console.log(`⚠️  Usando fallback: ${titulo}`);
+                this.elements.titulo.value = titulo;
+            }
+            
+        } catch (error) {
+            console.error('❌ Erro ao gerar título:', error);
+            // Fallback com timestamp
+            const titulo = `ID-${Date.now()}`;
+            this.elements.titulo.value = titulo;
+        }
+    }
+    
+    /**
+     * Carrega contas bancárias especificamente para o modo baixa
+     */
+    async loadContasBancarias() {
+        try {
+            console.log('🏦 Carregando contas bancárias para baixa...');
+            
+            if (!this.elements.baixaContaBancaria) {
+                console.warn('⚠️ Elemento baixaContaBancaria não encontrado');
+                return;
+            }
+            
+            // Mostrar loading
+            this.elements.baixaContaBancaria.innerHTML = '<option value="">Carregando contas...</option>';
+            
+            const response = await fetch('/api/contas-bancarias');
+            console.log('📡 Status da API contas-bancarias:', response.status);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ Erro na API contas-bancarias:', response.status, errorText);
+                this.elements.baixaContaBancaria.innerHTML = '<option value="">Erro ao carregar contas</option>';
+                return;
+            }
+            
+            const data = await response.json();
+            console.log('📋 Dados das contas recebidos:', data);
+            
+            const contas = data.data || data;
+            
+            if (contas && contas.length > 0) {
+                console.log(`✅ ${contas.length} contas ativas encontradas`);
+                
+                // Limpar e preencher select
+                this.elements.baixaContaBancaria.innerHTML = '<option value="">Selecione uma conta...</option>';
+                
+                contas.forEach(conta => {
+                    const option = document.createElement('option');
+                    option.value = conta.id;
+                    
+                    const banco = (conta.banco || 'N/A').substring(0, 30);
+                    const agencia = conta.agencia || 'N/A';
+                    const contaNum = conta.conta || 'N/A';
+                    const empresa = conta.empresa ? ` (${conta.empresa.substring(0, 15)})` : '';
+                    
+                    option.textContent = `${banco} - Ag: ${agencia} - CC: ${contaNum}${empresa}`;
+                    this.elements.baixaContaBancaria.appendChild(option);
+                    
+                    console.log(`   • Conta ${conta.id}: ${option.textContent}`);
+                });
+                
+            } else {
+                console.warn('⚠️ Nenhuma conta ativa encontrada');
+                this.elements.baixaContaBancaria.innerHTML = '<option value="">Nenhuma conta ativa encontrada</option>';
+            }
+            
+        } catch (error) {
+            console.error('❌ Erro ao carregar contas bancárias:', error);
+            if (this.elements.baixaContaBancaria) {
+                this.elements.baixaContaBancaria.innerHTML = '<option value="">Erro ao carregar contas</option>';
+            }
+        }
     }
     
     /**
@@ -1170,38 +1675,60 @@ class TransacaoForm {
      */
     async realizarBaixa() {
         try {
+            console.log('💰 Iniciando processo de baixa...');
+            
+            console.log('🔍 Validando formulário de baixa...');
             if (!this.validateBaixaForm()) {
+                console.error('❌ Validação do formulário falhou');
                 this.showAlert('Corrija os erros antes de confirmar a baixa', 'error');
                 return;
             }
+            console.log('✅ Formulário de baixa validado');
             
             this.setLoading(true);
             
             const data = this.getBaixaFormData();
+            console.log('📋 Dados da baixa coletados:', data);
             
-            const response = await fetch(`/api/transacao/${this.state.transacaoId}/baixa`, {
+            const url = `/api/transacao/${this.state.transacaoId}/baixa`;
+            console.log('📡 Fazendo requisição para:', url);
+            
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
             
+            console.log('📈 Status da resposta:', response.status);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ Erro HTTP:', response.status, errorText);
+                throw new Error(`Erro ${response.status}: ${errorText}`);
+            }
+            
             const result = await response.json();
+            console.log('📋 Resultado da API:', result);
             
             if (result.success) {
+                console.log('✅ Baixa realizada com sucesso!');
                 this.showAlert('Baixa realizada com sucesso!', 'success');
                 
                 if (this.options.onSave) {
+                    console.log('🔄 Chamando callback onSave...');
                     this.options.onSave(result.data);
                 }
                 
+                console.log('⏰ Fechando modal em 1.5 segundos...');
                 setTimeout(() => this.close(), 1500);
             } else {
+                console.error('❌ API retornou erro:', result.message);
                 throw new Error(result.message || 'Erro ao realizar baixa');
             }
             
         } catch (error) {
-            console.error('Erro ao realizar baixa:', error);
-            this.showAlert('Erro ao realizar baixa', 'error');
+            console.error('❌ Erro ao realizar baixa:', error);
+            this.showAlert(`Erro ao realizar baixa: ${error.message}`, 'error');
         } finally {
             this.setLoading(false);
         }
@@ -1211,17 +1738,26 @@ class TransacaoForm {
      * Valida formulário de baixa
      */
     validateBaixaForm() {
+        console.log('🔍 Iniciando validação do formulário de baixa...');
+        
         const requiredFields = [
-            this.elements.baixaDataPagamento,
-            this.elements.baixaValorPago
+            { element: this.elements.baixaDataPagamento, name: 'Data de Pagamento' },
+            { element: this.elements.baixaValorPago, name: 'Valor Pago' }
         ];
         
         let isValid = true;
         
+        // Verificar campos obrigatórios
         requiredFields.forEach(field => {
-            if (!field.value.trim()) {
-                this.setFieldError(field.id, 'Campo obrigatório');
+            console.log(`   • Validando ${field.name}:`, field.element?.value);
+            if (!field.element || !field.element.value.trim()) {
+                console.error(`   ❌ ${field.name} está vazio`);
+                if (field.element) {
+                    this.setFieldError(field.element.id, 'Campo obrigatório');
+                }
                 isValid = false;
+            } else {
+                console.log(`   ✅ ${field.name} OK`);
             }
         });
         
@@ -1229,16 +1765,23 @@ class TransacaoForm {
         const valorOriginal = parseFloat(this.elements.valor.value) || 0;
         const valorPago = parseFloat(this.elements.baixaValorPago.value) || 0;
         
+        console.log(`   • Valor original: R$ ${valorOriginal}`);
+        console.log(`   • Valor pago: R$ ${valorPago}`);
+        console.log(`   • Baixa parcial: ${this.state.isBaixaParcial}`);
+        
         if (valorPago <= 0) {
+            console.error('   ❌ Valor pago deve ser maior que zero');
             this.setFieldError('baixa-valor-pago', 'Valor deve ser maior que zero');
             isValid = false;
         }
         
         if (!this.state.isBaixaParcial && valorPago > valorOriginal) {
+            console.error('   ❌ Valor pago maior que o original');
             this.setFieldError('baixa-valor-pago', 'Valor pago não pode ser maior que o valor original');
             isValid = false;
         }
         
+        console.log(`🎯 Validação concluída: ${isValid ? 'PASSOU' : 'FALHOU'}`);
         return isValid;
     }
     
@@ -1246,7 +1789,7 @@ class TransacaoForm {
      * Coleta dados do formulário principal
      */
     getFormData() {
-        return {
+        const baseData = {
             titulo: this.elements.titulo.value.trim(),
             numero_documento: this.elements.numeroDocumento.value.trim(),
             cliente_fornecedor_id: parseInt(this.elements.fornecedor.value) || null,
@@ -1256,10 +1799,34 @@ class TransacaoForm {
             tipo: this.elements.tipo.value,
             valor: parseFloat(this.elements.valor.value) || 0,
             data_vencimento: this.elements.dataVencimento.value,
-            status_negociacao: this.elements.statusNegociacao.value,
-            status_pagamento: this.elements.statusPagamento.value,
             observacao: this.elements.observacoes.value.trim()
         };
+        
+        // Para modo create, definir status padrão
+        if (this.state.mode === 'create') {
+            baseData.status_negociacao = 'NÃO NEGOCIADO';
+            
+            // Definir status_pagamento baseado na data de vencimento
+            const hoje = new Date().toISOString().split('T')[0];
+            const dataVencimento = this.elements.dataVencimento.value;
+            
+            if (dataVencimento && dataVencimento < hoje) {
+                baseData.status_pagamento = 'Atrasado';
+            } else {
+                baseData.status_pagamento = 'Previsao';
+            }
+            
+            console.log('📋 Status definidos automaticamente:', {
+                status_negociacao: baseData.status_negociacao,
+                status_pagamento: baseData.status_pagamento
+            });
+        } else {
+            // Para modo edit, usar valores dos campos (se existirem)
+            baseData.status_negociacao = this.elements.statusNegociacao?.value || 'NÃO NEGOCIADO';
+            baseData.status_pagamento = this.elements.statusPagamento?.value || 'Previsao';
+        }
+        
+        return baseData;
     }
     
     /**

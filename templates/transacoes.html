@@ -5,7 +5,7 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/transacoes.css') }}?v=2.0">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/table_component.css') }}?v=1.0">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/components/transacao_form.css') }}?v=1.0">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/transacao_form.css') }}?v=1.1">
 {% endblock %}
 
 {% block breadcrumb %}
@@ -350,7 +350,7 @@
 
 {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/components/table_component.js') }}?v=1.0"></script>
-<script src="{{ url_for('static', filename='js/components/transacao_form.js') }}?v=1.2"></script>
+<script src="{{ url_for('static', filename='js/components/transacao_form.js') }}?v=1.9"></script>
 <script src="{{ url_for('static', filename='js/transacoes_v3.js') }}?v=3.0"></script>
 
 <!-- Funções de Edição de Transações -->
@@ -361,6 +361,27 @@
 
 // Instância global do formulário
 let currentTransacaoForm = null;
+
+/**
+ * Funções globais para limpeza de seleção dos campos de busca
+ */
+function clearFornecedorSelection() {
+    if (currentTransacaoForm) {
+        currentTransacaoForm.clearSearchSelection('fornecedor');
+    }
+}
+
+function clearPlanoSelection() {
+    if (currentTransacaoForm) {
+        currentTransacaoForm.clearSearchSelection('plano');
+    }
+}
+
+function clearCentroSelection() {
+    if (currentTransacaoForm) {
+        currentTransacaoForm.clearSearchSelection('centro');
+    }
+}
 
 /**
  * Abre modal para editar transação específica
