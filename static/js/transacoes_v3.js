@@ -545,6 +545,15 @@ function initializeTableComponent() {
                         class: 'btn-edit'
                     },
                     {
+                        icon: 'fas fa-check-circle',
+                        title: 'Realizar Baixa',
+                        handler: 'realizarBaixa',
+                        class: 'btn-baixa',
+                        condition: function(row) {
+                            return row.status_pagamento === 'A Realizar';
+                        }
+                    },
+                    {
                         icon: 'fas fa-trash',
                         title: 'Excluir',
                         handler: 'excluirTransacao',

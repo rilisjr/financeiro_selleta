@@ -1,0 +1,666 @@
+/* ==========================================
+   TRANSAÇÃO FORM - COMPONENTE DE EDIÇÃO
+   Modal para criar/editar/baixar transações
+   ========================================== */
+
+/* Modal de Edição de Transação */
+.modal-transacao {
+    z-index: 10001;
+}
+
+.modal-transacao .modal-content {
+    max-width: 900px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-transacao .modal-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 20px 25px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.modal-transacao .modal-header h3 {
+    color: #1a73e8;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.modal-transacao .modal-header .status-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.modal-transacao .modal-body {
+    padding: 25px;
+    background: white;
+}
+
+/* Seções do Formulário */
+.form-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #e1e3e4;
+}
+
+.form-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    color: #1a73e8;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.form-section-header i {
+    width: 20px;
+    text-align: center;
+}
+
+/* Modo de Pesquisa */
+.search-mode {
+    background: #e3f2fd;
+    border-color: #1a73e8;
+}
+
+.search-mode .form-section-header {
+    color: #0d47a1;
+}
+
+.search-results {
+    background: white;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 15px;
+    border: 1px solid #dadce0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.search-result-item {
+    padding: 12px;
+    border-bottom: 1px solid #f1f3f4;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item:hover {
+    background: #f8f9fa;
+}
+
+.search-result-item.selected {
+    background: #e8f0fe;
+    border-color: #1a73e8;
+}
+
+.search-result-title {
+    font-weight: 600;
+    color: #202124;
+    margin-bottom: 4px;
+}
+
+.search-result-details {
+    font-size: 13px;
+    color: #5f6368;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.search-result-value {
+    font-weight: 600;
+}
+
+.search-result-status {
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+/* Grid de Campos */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.form-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.form-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: #202124;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.form-group label .required {
+    color: #ea4335;
+    font-size: 12px;
+}
+
+.form-group label .info-icon {
+    color: #5f6368;
+    cursor: help;
+    font-size: 12px;
+}
+
+/* Campos do Formulário */
+.form-input,
+.form-select,
+.form-textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #dadce0;
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.1);
+}
+
+.form-input:disabled,
+.form-select:disabled,
+.form-textarea:disabled {
+    background: #f1f3f4;
+    color: #5f6368;
+    cursor: not-allowed;
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Campo com Ícone */
+.form-input-with-icon {
+    position: relative;
+}
+
+.form-input-with-icon input {
+    padding-left: 40px;
+}
+
+.form-input-with-icon .icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #5f6368;
+    pointer-events: none;
+}
+
+/* Valores Monetários */
+.valor-input {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 600;
+    text-align: right;
+}
+
+.valor-entrada {
+    border-left: 3px solid #34a853;
+}
+
+.valor-saida {
+    border-left: 3px solid #ea4335;
+}
+
+/* Status Visual */
+.form-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 15px;
+}
+
+.status-indicator-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: white;
+}
+
+.form-status-indicator.status-a-realizar {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.form-status-indicator.status-a-realizar .status-indicator-icon {
+    background: #ff9800;
+}
+
+.form-status-indicator.status-realizado {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.form-status-indicator.status-realizado .status-indicator-icon {
+    background: #4caf50;
+}
+
+/* Modo Baixa */
+.baixa-mode {
+    background: #fff3e0;
+    border-color: #ff9800;
+}
+
+.baixa-mode .form-section-header {
+    color: #e65100;
+}
+
+.baixa-highlight {
+    background: #fff3e0;
+    border: 1px solid #ffcc02;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.baixa-highlight-title {
+    font-weight: 600;
+    color: #e65100;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.baixa-highlight-info {
+    font-size: 13px;
+    color: #bf360c;
+    line-height: 1.4;
+}
+
+/* Baixa Parcial */
+.baixa-parcial-section {
+    background: #e3f2fd;
+    border: 1px solid #2196f3;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.baixa-parcial-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    cursor: pointer;
+}
+
+.baixa-parcial-toggle input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #1a73e8;
+}
+
+.baixa-parcial-toggle label {
+    font-weight: 600;
+    color: #1a73e8;
+    cursor: pointer;
+    margin: 0;
+}
+
+.baixa-parcial-info {
+    background: white;
+    border-radius: 4px;
+    padding: 12px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #5f6368;
+    border-left: 3px solid #2196f3;
+}
+
+.valor-restante {
+    font-weight: 600;
+    color: #1a73e8;
+}
+
+/* Histórico de Alterações */
+.historico-section {
+    background: #f1f3f4;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 20px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.historico-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #e0e0e0;
+    font-size: 13px;
+}
+
+.historico-item:last-child {
+    border-bottom: none;
+}
+
+.historico-data {
+    color: #5f6368;
+    font-weight: 500;
+}
+
+.historico-usuario {
+    color: #1a73e8;
+    font-weight: 600;
+}
+
+.historico-acao {
+    color: #202124;
+}
+
+/* Alertas e Mensagens */
+.form-alert {
+    padding: 12px 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.form-alert-success {
+    background: #e8f5e8;
+    color: #2e7d32;
+    border: 1px solid #4caf50;
+}
+
+.form-alert-warning {
+    background: #fff3e0;
+    color: #e65100;
+    border: 1px solid #ff9800;
+}
+
+.form-alert-error {
+    background: #ffebee;
+    color: #c62828;
+    border: 1px solid #f44336;
+}
+
+.form-alert-info {
+    background: #e3f2fd;
+    color: #0d47a1;
+    border: 1px solid #2196f3;
+}
+
+/* Validação de Campos */
+.form-group.has-error .form-input,
+.form-group.has-error .form-select,
+.form-group.has-error .form-textarea {
+    border-color: #ea4335;
+    background: #fef7f7;
+}
+
+.form-group.has-success .form-input,
+.form-group.has-success .form-select,
+.form-group.has-success .form-textarea {
+    border-color: #34a853;
+}
+
+.form-error-message {
+    color: #ea4335;
+    font-size: 12px;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.form-success-message {
+    color: #34a853;
+    font-size: 12px;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Footer do Modal */
+.modal-transacao .modal-footer {
+    background: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+    padding: 20px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+}
+
+.modal-footer-info {
+    font-size: 13px;
+    color: #5f6368;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-footer-actions {
+    display: flex;
+    gap: 12px;
+}
+
+/* Botões */
+.btn-form {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.btn-form:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-form-primary {
+    background: #1a73e8;
+    color: white;
+}
+
+.btn-form-primary:hover:not(:disabled) {
+    background: #1557b0;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(26, 115, 232, 0.3);
+}
+
+.btn-form-secondary {
+    background: #f8f9fa;
+    color: #5f6368;
+    border: 1px solid #dadce0;
+}
+
+.btn-form-secondary:hover:not(:disabled) {
+    background: #e8f0fe;
+    color: #1a73e8;
+    border-color: #1a73e8;
+}
+
+.btn-form-success {
+    background: #34a853;
+    color: white;
+}
+
+.btn-form-success:hover:not(:disabled) {
+    background: #2d8f43;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(52, 168, 83, 0.3);
+}
+
+.btn-form-warning {
+    background: #ff9800;
+    color: white;
+}
+
+.btn-form-warning:hover:not(:disabled) {
+    background: #f57c00;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+}
+
+.btn-form-danger {
+    background: #ea4335;
+    color: white;
+}
+
+.btn-form-danger:hover:not(:disabled) {
+    background: #d33b2c;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(234, 67, 53, 0.3);
+}
+
+/* Loading States */
+.form-loading {
+    position: relative;
+    overflow: hidden;
+}
+
+.form-loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #1a73e8, transparent);
+    animation: loading-bar 2s infinite;
+}
+
+@keyframes loading-bar {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+.btn-form-loading {
+    pointer-events: none;
+    position: relative;
+}
+
+.btn-form-loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    left: 12px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .modal-transacao .modal-content {
+        width: 98%;
+        margin: 1% auto;
+        max-height: 98vh;
+    }
+    
+    .form-grid,
+    .form-grid-2,
+    .form-grid-3 {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-footer-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .btn-form {
+        width: 100%;
+    }
+    
+    .modal-transacao .modal-footer {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .modal-footer-info {
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-transacao .modal-body,
+    .modal-transacao .modal-header,
+    .modal-transacao .modal-footer {
+        padding: 15px;
+    }
+    
+    .form-section {
+        padding: 15px;
+    }
+    
+    .search-result-details {
+        flex-direction: column;
+        gap: 5px;
+    }
+}

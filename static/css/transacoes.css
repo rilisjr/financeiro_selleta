@@ -638,6 +638,67 @@
     text-decoration: none;
 }
 
+/* Botões de Ação da Tabela */
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 2px;
+    transition: all 0.2s ease;
+    font-size: 13px;
+}
+
+.btn-icon.btn-edit {
+    background: #e8f0fe;
+    color: #1a73e8;
+    border: 1px solid transparent;
+}
+
+.btn-icon.btn-edit:hover {
+    background: #1a73e8;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(26, 115, 232, 0.3);
+}
+
+.btn-icon.btn-baixa {
+    background: #e8f5e8;
+    color: #34a853;
+    border: 1px solid transparent;
+}
+
+.btn-icon.btn-baixa:hover {
+    background: #34a853;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(52, 168, 83, 0.3);
+}
+
+.btn-icon.btn-delete {
+    background: #ffebee;
+    color: #ea4335;
+    border: 1px solid transparent;
+}
+
+.btn-icon.btn-delete:hover {
+    background: #ea4335;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(234, 67, 53, 0.3);
+}
+
+.btn-icon:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 .btn-primary {
     background: #1a73e8;
     color: white;

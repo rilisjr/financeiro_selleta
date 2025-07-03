@@ -2257,6 +2257,42 @@ def api_buscar_fornecedores():
         logger.error(f"Erro na busca de fornecedores: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/centros-custo', methods=['GET'])
+def api_get_centros_custo():
+    """Retorna lista de centros de custo para selects"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, centro_custo_original, mascara_cc, tipologia
+            FROM centros_custo
+            WHERE ativo = 1
+            ORDER BY mascara_cc, centro_custo_original
+        """)
+        
+        centros = []
+        for row in cursor.fetchall():
+            centros.append({
+                'id': row[0],
+                'nome': row[1],
+                'mascara_cc': row[2] or '',
+                'tipologia': row[3] or ''
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'data': centros
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/api/centros-custo/detalhes', methods=['GET'])
 def api_detalhes_centros_custo():
     """API para obter detalhes dos centros de custo com informações de empresas"""
@@ -2322,6 +2358,186 @@ def debug_javascript():
     """Página de debug completo do JavaScript"""
     with open('debug/debug_javascript.html', 'r', encoding='utf-8') as f:
         return f.read()
+
+# ==========================================
+# APIS DE EDIÇÃO DE TRANSAÇÕES
+# ==========================================
+
+from api_transacao_edicao import (
+    get_transacao_detalhes, atualizar_transacao, realizar_baixa_transacao,
+    criar_nova_transacao, buscar_transacoes_edicao, get_historico_transacao,
+    estornar_baixa
+)
+
+@app.route('/api/transacao/<int:transacao_id>', methods=['GET'])
+def api_get_transacao_detalhes(transacao_id):
+    """Retorna dados completos de uma transação"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autenticado'}), 401
+    
+    result = get_transacao_detalhes(transacao_id)
+    return jsonify(result)
+
+@app.route('/api/transacao/<int:transacao_id>', methods=['PUT'])
+def api_editar_transacao(transacao_id):
+    """Atualiza uma transação existente"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autenticado'}), 401
+    
+    try:
+        dados = request.get_json()
+        result = atualizar_transacao(transacao_id, dados)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/transacao', methods=['POST'])
+def api_nova_transacao():
+    """Cria uma nova transação"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autenticado'}), 401
+    
+    try:
+        dados = request.get_json()
+        result = criar_nova_transacao(dados)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/transacao/<int:transacao_id>/baixa', methods=['POST'])
+def api_realizar_baixa(transacao_id):
+    """Realiza baixa de uma transação"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autenticado'}), 401
+    
+    try:
+        dados_baixa = request.get_json()
+        result = realizar_baixa_transacao(transacao_id, dados_baixa)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/transacao/<int:transacao_id>/estornar', methods=['POST'])
+def api_estornar_baixa(transacao_id):
+    """Estorna uma baixa realizada (apenas ADM)"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autenticado'}), 401
+    
+    try:
+        result = estornar_baixa(transacao_id)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/transacao/<int:transacao_id>/historico', methods=['GET'])
+def api_get_historico_transacao(transacao_id):
+    """Retorna histórico de alterações de uma transação"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autenticado'}), 401
+    
+    result = get_historico_transacao(transacao_id)
+    return jsonify(result)
+
+@app.route('/api/transacoes/buscar-edicao', methods=['POST'])
+def api_buscar_transacoes_edicao():
+    """Busca transações para edição com filtros específicos"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autenticado'}), 401
+    
+    try:
+        filtros = request.get_json() or {}
+        result = buscar_transacoes_edicao(filtros)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/plano-financeiro', methods=['GET'])
+def api_get_planos_financeiros():
+    """Retorna lista de planos financeiros para selects"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, codigo, nome, nivel
+            FROM plano_financeiro
+            WHERE ativo = 1
+            ORDER BY codigo
+        """)
+        
+        planos = []
+        for row in cursor.fetchall():
+            planos.append({
+                'id': row[0],
+                'codigo': row[1],
+                'nome': row[2],
+                'nivel': row[3]
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'data': planos
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/contas-bancarias', methods=['GET'])
+def api_get_contas_bancarias():
+    """Retorna lista de contas bancárias para selects"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, banco, agencia, conta_corrente, tipo_conta, status_conta
+            FROM conta_bancaria
+            WHERE status_conta = 'Ativa' AND ativo = 1
+            ORDER BY banco, conta_corrente
+        """)
+        
+        contas = []
+        for row in cursor.fetchall():
+            contas.append({
+                'id': row[0],
+                'banco': row[1] or '',
+                'agencia': row[2] or '',
+                'conta': row[3] or '',
+                'tipo': row[4] or '',
+                'status': row[5] or ''
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'data': contas
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# ==========================================
+# ROTA PARA PÁGINA DE EDIÇÃO
+# ==========================================
+
+@app.route('/editar-transacao')
+@app.route('/editar-transacao/<int:transacao_id>')
+def editar_transacao(transacao_id=None):
+    """Página de edição de transações"""
+    if 'user_id' not in session:
+        flash('error', 'Você não está autenticado.')
+        return redirect(url_for('index'))
+    
+    return render_template('editar_transacao.html', transacao_id=transacao_id)
 
 if __name__ == '__main__':
     app.run(debug=True)

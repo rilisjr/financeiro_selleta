@@ -1161,8 +1161,13 @@ class TableFormatters {
         const actions = column.actions || [];
         
         return actions.map(action => {
-            // Verificar se ação deve ser mostrada
+            // Verificar se ação deve ser mostrada (compatibilidade)
             if (action.show && !action.show(row)) {
+                return '';
+            }
+            
+            // Verificar condição (nova forma)
+            if (action.condition && !action.condition(row)) {
                 return '';
             }
             

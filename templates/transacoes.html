@@ -5,6 +5,7 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/transacoes.css') }}?v=2.0">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/table_component.css') }}?v=1.0">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/transacao_form.css') }}?v=1.0">
 {% endblock %}
 
 {% block breadcrumb %}
@@ -25,6 +26,9 @@
     <div class="page-actions">
         <button class="btn btn-reports" id="btn-relatorios">
             <i class="fas fa-chart-line"></i> Relatórios
+        </button>
+        <button class="btn btn-secondary" onclick="editarTransacao()">
+            <i class="fas fa-edit"></i> Edição de Título
         </button>
         <button class="btn btn-primary" onclick="novaTransacao()">
             <i class="fas fa-plus"></i> Nova Transação
@@ -346,5 +350,176 @@
 
 {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/components/table_component.js') }}?v=1.0"></script>
+<script src="{{ url_for('static', filename='js/components/transacao_form.js') }}?v=1.2"></script>
 <script src="{{ url_for('static', filename='js/transacoes_v3.js') }}?v=3.0"></script>
+
+<!-- Funções de Edição de Transações -->
+<script>
+/**
+ * Funções globais para edição de transações
+ */
+
+// Instância global do formulário
+let currentTransacaoForm = null;
+
+/**
+ * Abre modal para editar transação específica
+ */
+function editarTransacao(id = null) {
+    // Fechar formulário anterior se existir
+    if (currentTransacaoForm) {
+        currentTransacaoForm.destroy();
+    }
+    
+    const mode = id ? 'edit' : 'search';
+    
+    currentTransacaoForm = new TransacaoForm({
+        mode: mode,
+        transacaoId: id,
+        onSave: function(data) {
+            console.log('✅ Transação salva:', data);
+            
+            // Recarregar dados da tabela
+            if (typeof TransacoesApp !== 'undefined' && TransacoesApp.carregarDados) {
+                TransacoesApp.carregarDados();
+            }
+            
+            // Mostrar notificação
+            showNotification('Transação salva com sucesso!', 'success');
+        },
+        onCancel: function() {
+            console.log('❌ Edição cancelada');
+        }
+    });
+    
+    currentTransacaoForm.open();
+}
+
+/**
+ * Abre modal para criar nova transação
+ */
+function novaTransacao() {
+    // Fechar formulário anterior se existir
+    if (currentTransacaoForm) {
+        currentTransacaoForm.destroy();
+    }
+    
+    currentTransacaoForm = new TransacaoForm({
+        mode: 'create',
+        onSave: function(data) {
+            console.log('✅ Nova transação criada:', data);
+            
+            // Recarregar dados da tabela
+            if (typeof TransacoesApp !== 'undefined' && TransacoesApp.carregarDados) {
+                TransacoesApp.carregarDados();
+            }
+            
+            // Mostrar notificação
+            showNotification('Nova transação criada com sucesso!', 'success');
+        },
+        onCancel: function() {
+            console.log('❌ Criação cancelada');
+        }
+    });
+    
+    currentTransacaoForm.open();
+}
+
+/**
+ * Abre modal para realizar baixa de transação
+ */
+function realizarBaixa(id) {
+    // Fechar formulário anterior se existir
+    if (currentTransacaoForm) {
+        currentTransacaoForm.destroy();
+    }
+    
+    currentTransacaoForm = new TransacaoForm({
+        mode: 'baixa',
+        transacaoId: id,
+        onSave: function(data) {
+            console.log('✅ Baixa realizada:', data);
+            
+            // Recarregar dados da tabela
+            if (typeof TransacoesApp !== 'undefined' && TransacoesApp.carregarDados) {
+                TransacoesApp.carregarDados();
+            }
+            
+            // Mostrar notificação
+            showNotification('Baixa realizada com sucesso!', 'success');
+        },
+        onCancel: function() {
+            console.log('❌ Baixa cancelada');
+        }
+    });
+    
+    currentTransacaoForm.open();
+}
+
+/**
+ * Mostra notificação simples
+ */
+function showNotification(message, type = 'info') {
+    // Criar elemento de notificação
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 6px;
+        color: white;
+        font-weight: 500;
+        z-index: 10002;
+        max-width: 400px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideInRight 0.3s ease;
+    `;
+    
+    // Cores baseadas no tipo
+    const colors = {
+        success: '#4caf50',
+        error: '#f44336',
+        warning: '#ff9800',
+        info: '#2196f3'
+    };
+    
+    notification.style.backgroundColor = colors[type] || colors.info;
+    notification.textContent = message;
+    
+    // Adicionar ao DOM
+    document.body.appendChild(notification);
+    
+    // Remover após 4 segundos
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }
+    }, 4000);
+}
+
+// CSS para animações de notificação
+if (!document.getElementById('notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'notification-styles';
+    style.textContent = `
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+console.log('🚀 Funções de edição de transações carregadas');
+</script>
 {% endblock %}
