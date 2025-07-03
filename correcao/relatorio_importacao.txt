@@ -1,0 +1,15 @@
+RELATÓRIO DE IMPORTAÇÃO - DADOS TRATADOS
+==================================================
+Data/Hora: 01/07/2025 às 20:00:41
+Status: SUCESSO
+
+Tabelas importadas:
+- plano_financeiro
+- fornecedores
+- transacoes (com nova coluna conta_bancaria_id)
+
+Tabelas mantidas:
+- usuarios
+- empresas
+- centros_custo
+- conta_bancaria

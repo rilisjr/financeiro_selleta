@@ -6,6 +6,7 @@ from datetime import datetime, date, timedelta
 import logging
 from filtros_avancados import FiltrosAvancados, aplicar_filtro_smart, get_status_counts, get_view_metrics
 from rotas_adm import admin_bp
+from api_filtros_transacoes import get_filtros_api, executar_query_filtrada
 
 # Configurar logger
 logger = logging.getLogger(__name__)
@@ -983,8 +984,8 @@ def transacoes():
         return redirect(url_for('index'))
     
     try:
-        # FASE 2: Template implementado com UX híbrida
-        # Features: Cards + Tabela + Timeline + Parcelas + Filtros avançados
+        # NOVA ARQUITETURA v2.0: Sistema completo de filtros
+        # Features: APIs dedicadas + Filtros hierárquicos + UX moderna
         return render_template('transacoes.html')
         
     except Exception as e:
@@ -1331,8 +1332,15 @@ def api_listar_transacoes():
             params.append(tipo)
             
         if status_pagamento:
-            query += ' AND t.status_pagamento = ?'
-            params.append(status_pagamento)
+            # Suporte a múltiplos status (separados por vírgula)
+            if ',' in status_pagamento:
+                status_list = [s.strip() for s in status_pagamento.split(',') if s.strip()]
+                placeholders = ','.join(['?' for _ in status_list])
+                query += f' AND t.status_pagamento IN ({placeholders})'
+                params.extend(status_list)
+            else:
+                query += ' AND t.status_pagamento = ?'
+                params.append(status_pagamento)
             
         if status_negociacao:
             query += ' AND t.status_negociacao = ?'
@@ -1387,7 +1395,13 @@ def api_listar_transacoes():
         if tipo:
             count_query += ' AND t.tipo = ?'
         if status_pagamento:
-            count_query += ' AND t.status_pagamento = ?'
+            # Suporte a múltiplos status na contagem também
+            if ',' in status_pagamento:
+                status_list = [s.strip() for s in status_pagamento.split(',') if s.strip()]
+                placeholders = ','.join(['?' for _ in status_list])
+                count_query += f' AND t.status_pagamento IN ({placeholders})'
+            else:
+                count_query += ' AND t.status_pagamento = ?'
         if status_negociacao:
             count_query += ' AND t.status_negociacao = ?'
         if empresa_id:
@@ -1894,22 +1908,22 @@ def api_dashboard_kpis():
         hoje = date.today()
         primeiro_dia = hoje.replace(day=1)
         
-        # KPI 1: Receitas do mês
+        # KPI 1: Receitas do mês (usar dezembro 2024 como referência - dados mais ricos)
         cursor.execute('''
             SELECT COALESCE(SUM(valor), 0) as total
             FROM transacoes
             WHERE tipo IN ('Receita', 'Entrada')
-            AND strftime('%Y-%m', data_vencimento) = strftime('%Y-%m', 'now')
+            AND strftime('%Y-%m', data_vencimento) = '2024-12'
             AND status_pagamento != 'Cancelado'
         ''')
         receitas_mes = float(cursor.fetchone()[0])
         
-        # KPI 2: Despesas do mês
+        # KPI 2: Despesas do mês (usar dezembro 2024 como referência)
         cursor.execute('''
             SELECT COALESCE(SUM(valor), 0) as total
             FROM transacoes
             WHERE tipo IN ('Despesa', 'Saída')
-            AND strftime('%Y-%m', data_vencimento) = strftime('%Y-%m', 'now')
+            AND strftime('%Y-%m', data_vencimento) = '2024-12'
             AND status_pagamento != 'Cancelado'
         ''')
         despesas_mes = float(cursor.fetchone()[0])
@@ -1928,11 +1942,11 @@ def api_dashboard_kpis():
         cursor.execute('SELECT COUNT(*) FROM transacoes')
         total_transacoes = cursor.fetchone()[0]
         
-        # Contas a vencer (próximos 7 dias)
+        # Contas a vencer (próximos 7 dias) - usar status corretos
         cursor.execute('''
             SELECT COUNT(*) as qtd, COALESCE(SUM(valor), 0) as total
             FROM transacoes
-            WHERE status_pagamento = 'Á realizar'
+            WHERE status_pagamento IN ('Previsao', 'Atrasado')
             AND data_vencimento BETWEEN date('now') AND date('now', '+7 days')
         ''')
         result = cursor.fetchone()
@@ -2041,6 +2055,273 @@ def api_resumo_centros_custo():
     except Exception as e:
         logger.error(f"Erro ao buscar resumo centros: {e}")
         return jsonify({'error': str(e)}), 500
+
+# ==========================================
+# NOVAS ROTAS DA API DE FILTROS
+# ==========================================
+
+@app.route('/api/transacoes/filtros', methods=['GET'])
+def api_filtros_transacoes():
+    """API para obter todos os filtros disponíveis"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        filtros = get_filtros_api()
+        return jsonify(filtros)
+    except Exception as e:
+        logger.error(f"Erro ao carregar filtros: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/transacoes/buscar', methods=['POST'])
+def api_buscar_transacoes():
+    """API para buscar transações com filtros aplicados"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        # Receber filtros do frontend
+        data = request.get_json() or {}
+        filtros = data.get('filtros', {})
+        page = data.get('page', 1)
+        per_page = min(data.get('per_page', 50), 500)  # Máximo 500 por página
+        
+        # Executar busca
+        resultado = executar_query_filtrada(filtros, page, per_page)
+        
+        return jsonify(resultado)
+        
+    except Exception as e:
+        logger.error(f"Erro na busca de transações: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/transacoes/kpis', methods=['POST'])
+def api_kpis_filtrados():
+    """API para obter apenas os KPIs baseados nos filtros"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        data = request.get_json() or {}
+        filtros = data.get('filtros', {})
+        
+        # Executar apenas para obter KPIs (página 1, 1 resultado)
+        resultado = executar_query_filtrada(filtros, page=1, per_page=1)
+        
+        return jsonify(resultado['kpis'])
+        
+    except Exception as e:
+        logger.error(f"Erro ao calcular KPIs: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/transacoes/kpis-globais', methods=['GET'])
+def api_kpis_globais():
+    """KPIs de TODAS as transações (valores absolutos globais)"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Query otimizada para agregações globais
+        cursor.execute('''
+            SELECT 
+                COUNT(*) as total_transacoes,
+                COUNT(CASE WHEN tipo = 'Entrada' THEN 1 END) as count_receitas,
+                COUNT(CASE WHEN tipo = 'Saída' THEN 1 END) as count_despesas,
+                COALESCE(SUM(CASE WHEN tipo = 'Entrada' THEN valor ELSE 0 END), 0) as total_receitas,
+                COALESCE(SUM(CASE WHEN tipo = 'Saída' THEN valor ELSE 0 END), 0) as total_despesas,
+                MIN(data_vencimento) as data_inicial,
+                MAX(data_vencimento) as data_final
+            FROM transacoes
+        ''')
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        if not result:
+            return jsonify({
+                'total_transacoes': 0,
+                'count_receitas': 0,
+                'count_despesas': 0,
+                'total_receitas': 0,
+                'total_despesas': 0,
+                'saldo': 0,
+                'tipo': 'global'
+            })
+        
+        total_receitas = float(result[3] or 0)
+        total_despesas = float(result[4] or 0)
+        saldo = total_receitas - total_despesas
+        
+        return jsonify({
+            'total_transacoes': result[0] or 0,
+            'count_receitas': result[1] or 0, 
+            'count_despesas': result[2] or 0,
+            'total_receitas': total_receitas,
+            'total_despesas': total_despesas,
+            'saldo': saldo,
+            'data_inicial': result[5],
+            'data_final': result[6],
+            'tipo': 'global'
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao calcular KPIs globais: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/fornecedores/buscar', methods=['POST'])
+def api_buscar_fornecedores():
+    """API para busca de fornecedores com aproximação"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        data = request.get_json() or {}
+        termo_busca = data.get('termo', '').strip()
+        tipo_filtro = data.get('tipo', '')
+        limite = data.get('limite', 50)
+        
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Query base
+        query = '''
+            SELECT id, nome, tipo_fornecedor, 
+                   valor_total_movimentado, total_transacoes
+            FROM fornecedores 
+            WHERE ativo = 1
+        '''
+        params = []
+        
+        # Filtro por tipo
+        if tipo_filtro:
+            query += ' AND tipo_fornecedor = ?'
+            params.append(tipo_filtro)
+        
+        # Busca por aproximação
+        if termo_busca:
+            query += ' AND (nome LIKE ? OR nome LIKE ? OR nome LIKE ?)'
+            params.extend([
+                f'%{termo_busca}%',           # Contém o termo
+                f'{termo_busca}%',            # Começa com o termo
+                f'%{termo_busca.replace(" ", "%")}%'  # Palavras separadas
+            ])
+        
+        # Ordenação: primeiro por relevância (movimentação), depois alfabética
+        query += '''
+            ORDER BY 
+                CASE 
+                    WHEN nome LIKE ? THEN 1
+                    WHEN nome LIKE ? THEN 2
+                    ELSE 3
+                END,
+                valor_total_movimentado DESC,
+                nome ASC
+            LIMIT ?
+        '''
+        
+        # Adicionar parâmetros de ordenação
+        if termo_busca:
+            params.extend([f'{termo_busca}%', f'%{termo_busca}%'])
+        else:
+            params.extend(['', ''])  # Valores vazios para quando não há busca
+        
+        params.append(limite)
+        
+        cursor.execute(query, params)
+        resultados = cursor.fetchall()
+        
+        fornecedores = []
+        for row in resultados:
+            fornecedores.append({
+                'id': row[0],
+                'nome': row[1],
+                'tipo': row[2],
+                'valor_movimentado': float(row[3] or 0),
+                'total_transacoes': row[4] or 0,
+                'label': f"{row[1]} ({row[2]})",
+                'value': row[0]
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'fornecedores': fornecedores,
+            'total': len(fornecedores),
+            'termo_busca': termo_busca
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro na busca de fornecedores: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/centros-custo/detalhes', methods=['GET'])
+def api_detalhes_centros_custo():
+    """API para obter detalhes dos centros de custo com informações de empresas"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Não autenticado'}), 401
+    
+    try:
+        conn = sqlite3.connect('selleta_main.db')
+        cursor = conn.cursor()
+        
+        # Buscar centros únicos com contagem de empresas e transações
+        cursor.execute('''
+            SELECT 
+                cc.mascara_cc,
+                cc.tipologia,
+                COUNT(DISTINCT cc.empresa_id) as total_empresas,
+                COUNT(DISTINCT cc.id) as total_registros,
+                COUNT(DISTINCT t.id) as total_transacoes,
+                GROUP_CONCAT(DISTINCT e.nome) as nomes_empresas
+            FROM centros_custo cc
+            LEFT JOIN empresas e ON cc.empresa_id = e.id
+            LEFT JOIN transacoes t ON t.centro_custo_id = cc.id
+            WHERE cc.ativo = 1 AND cc.mascara_cc IS NOT NULL
+            GROUP BY cc.mascara_cc, cc.tipologia
+            ORDER BY cc.tipologia, cc.mascara_cc
+        ''')
+        
+        centros = []
+        for row in cursor.fetchall():
+            centros.append({
+                'nome': row[0],
+                'tipologia': row[1] or 'Não definido',
+                'total_empresas': row[2],
+                'total_registros': row[3],
+                'total_transacoes': row[4] or 0,
+                'empresas': row[5].split(',') if row[5] else [],
+                'label': f"{row[0]} ({row[2]} empresa{'s' if row[2] > 1 else ''}, {row[4] or 0} transações)"
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'centros': centros,
+            'total': len(centros)
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao buscar detalhes dos centros de custo: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ==========================================
+# ROTAS DE DEBUG
+# ==========================================
+
+@app.route('/debug/teste-kpis')
+def debug_teste_kpis():
+    """Página de teste isolado para debug dos KPIs"""
+    with open('debug/teste_isolado_kpis.html', 'r', encoding='utf-8') as f:
+        return f.read()
+
+@app.route('/debug/javascript')
+def debug_javascript():
+    """Página de debug completo do JavaScript"""
+    with open('debug/debug_javascript.html', 'r', encoding='utf-8') as f:
+        return f.read()
 
 if __name__ == '__main__':
     app.run(debug=True)

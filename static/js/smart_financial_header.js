@@ -38,13 +38,13 @@ function initializeSmartHeader() {
 function setDefaultFilters() {
     console.log('⚙️ Configurando filtros padrão...');
     
-    // View type padrão: Previsão
+    // View type padrão: Sem filtro (todos)
     if (typeof switchViewType === 'function') {
-        switchViewType('previsao');
+        switchViewType('');
     }
     
-    // Status negociação padrão: NEGOCIADO
-    $('#smartStatusNegociacaoFilter').val('NEGOCIADO');
+    // Status negociação padrão: vazio (todos)
+    $('#smartStatusNegociacaoFilter').val('');
     
     // Trigger update
     if (typeof updateSmartSummary === 'function') {
@@ -383,14 +383,15 @@ function setupSmartHeaderEvents() {
         
         console.log(`🔘 Clicou em status: ${selectedStatus}`);
         
-        if (selectedStatus === 'todos') {
+        if (selectedStatus === '' || selectedStatus === 'todos') {
             // Se clicar em "Todos", desmarcar todos os outros e marcar apenas "Todos"
             $('.status-filter-btn').removeClass('active selected');
             $(this).addClass('active');
+            $('#smartStatusPagamentoFilter').val('');
             console.log(`✅ "Todos" selecionado - desmarcando específicos`);
         } else {
             // Se clicar em qualquer outro, desmarcar "Todos"
-            $('.status-filter-btn[data-status="todos"]').removeClass('active');
+            $('.status-filter-btn[data-status=""]').removeClass('active');
             
             // Toggle do botão clicado
             $(this).toggleClass('selected');
@@ -401,12 +402,27 @@ function setupSmartHeaderEvents() {
             
             if (!hasSelected) {
                 // Se nenhum selecionado, marcar "Todos"
-                $('.status-filter-btn[data-status="todos"]').addClass('active');
+                $('.status-filter-btn[data-status=""]').addClass('active');
+                $('#smartStatusPagamentoFilter').val('');
                 console.log(`🔄 Nenhum específico selecionado - voltando para "Todos"`);
+            } else {
+                // Coletar status selecionados
+                const selectedStatuses = [];
+                $('.status-filter-btn.selected').each(function() {
+                    selectedStatuses.push($(this).data('status'));
+                });
+                $('#smartStatusPagamentoFilter').val(selectedStatuses.join(','));
+                console.log(`📋 Status selecionados: ${selectedStatuses.join(', ')}`);
             }
         }
         
-        // Coletar status selecionados para log
+        // Atualizar contador visual
+        updateStatusFilterCounter();
+        
+        // Trigger update
+        if (typeof updateSmartSummary === 'function') {
+            updateSmartSummary();
+        }
         const selectedStatuses = [];
         $('.status-filter-btn.selected').each(function() {
             selectedStatuses.push($(this).data('status'));
@@ -485,6 +501,44 @@ window.applyPaymentStatusFilter = function(statuses) {
         updateSmartSummary();
     }
 };
+
+function updateStatusFilterCounter() {
+    const selectedCount = $('.status-filter-btn.selected').length;
+    const counterElement = $('#statusFilterCounter');
+    
+    if (selectedCount === 0 || $('.status-filter-btn[data-status=""]').hasClass('active')) {
+        counterElement.text('Todos selecionados');
+    } else if (selectedCount === 1) {
+        const selectedLabel = $('.status-filter-btn.selected').first().data('label');
+        counterElement.text(`${selectedLabel} selecionado`);
+    } else {
+        counterElement.text(`${selectedCount} status selecionados`);
+    }
+}
+
+function loadStatusCounts() {
+    // Carregar contagens para cada status
+    if (typeof allTransacoes !== 'undefined' && allTransacoes.length > 0) {
+        const counts = {
+            'Todos': allTransacoes.length,
+            'Realizado': 0,
+            'Previsao': 0,
+            'Atrasado': 0
+        };
+        
+        allTransacoes.forEach(t => {
+            if (t.status_dinamico === 'Realizado') counts['Realizado']++;
+            else if (t.status_dinamico === 'Previsão' || t.status_pagamento === 'Previsao') counts['Previsao']++;
+            else if (t.status_dinamico === 'Atrasado') counts['Atrasado']++;
+        });
+        
+        // Atualizar elementos
+        $('#countTodos').text(counts['Todos']);
+        $('#countRealizado').text(counts['Realizado']);
+        $('#countPrevisao').text(counts['Previsao']);
+        $('#countAtrasado').text(counts['Atrasado']);
+    }
+}
 
 // Funções globais
 window.applyPrevisao30Filter = function() {

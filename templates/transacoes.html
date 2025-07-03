@@ -3,7 +3,8 @@
 {% block title %}Selleta Financeiro | Gestão de Transações{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/transacoes.css') }}?v=1.4">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/transacoes.css') }}?v=2.0">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/table_component.css') }}?v=1.0">
 {% endblock %}
 
 {% block breadcrumb %}
@@ -15,15 +16,15 @@
 {% endblock %}
 
 {% block content %}
-<!-- Page Header - Seguindo padrão estabelecido -->
+<!-- Page Header - Conceito Visual Mantido -->
 <div class="page-header">
     <div class="page-title">
         <h2><i class="fas fa-exchange-alt"></i> Gestão de Transações</h2>
-        <p>Controle completo de receitas e despesas com sistema de parcelamento</p>
+        <p>Sistema completo de filtros e visualização de receitas/despesas</p>
     </div>
     <div class="page-actions">
-        <button class="btn btn-reports" id="btn-relatorios-transacoes">
-            <i class="fas fa-chart-line"></i> Relatórios Financeiros
+        <button class="btn btn-reports" id="btn-relatorios">
+            <i class="fas fa-chart-line"></i> Relatórios
         </button>
         <button class="btn btn-primary" onclick="novaTransacao()">
             <i class="fas fa-plus"></i> Nova Transação
@@ -31,293 +32,271 @@
     </div>
 </div>
 
-<!-- Smart Financial Header - Interactive Filter Panel -->
+<!-- Smart Financial Header - KPIs com Filtros Inteligentes -->
 <div class="smart-financial-header">
-    <!-- Date Range Slider - Criativo (MOVIDO PARA CIMA) -->
-    <div class="date-slider-container">
-        <div class="date-slider-header">
-            <div class="date-slider-title">
-                <i class="fas fa-calendar-alt"></i>
-                <span>Período de Análise</span>
-            </div>
-            <div class="date-slider-display">
-                <span id="dateRangeDisplay">Jan 2023 - Dez 2024</span>
-            </div>
-        </div>
-        
-        <div class="date-slider-track">
-            <div class="date-slider-range" id="dateSliderRange"></div>
-            <input type="range" id="dateSliderStart" class="date-slider-input" min="0" max="100" value="0" />
-            <input type="range" id="dateSliderEnd" class="date-slider-input" min="0" max="100" value="100" />
-        </div>
-        
-        <div class="date-slider-labels">
-            <div class="date-label-wrapper start">
-                <input type="text" id="dateStartInput" class="date-label-input" />
-                <button class="date-label-btn" onclick="toggleDateInput('start')">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span class="date-label-start">Jan 2023</span>
-                </button>
-            </div>
-            <div class="date-label-wrapper end">
-                <input type="text" id="dateEndInput" class="date-label-input" />
-                <button class="date-label-btn" onclick="toggleDateInput('end')">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span class="date-label-end">Dez 2024</span>
-                </button>
-            </div>
-        </div>
-        
-        <div class="date-quick-presets">
-            <button class="date-preset-btn active" data-preset="tudo">
-                <i class="fas fa-infinity"></i> Tudo
-            </button>
-            <button class="date-preset-btn" data-preset="ano-atual">
-                <i class="fas fa-calendar"></i> <span id="ano-atual-text">2024</span>
-            </button>
-            <button class="date-preset-btn" data-preset="trimestre">
-                <i class="fas fa-calendar-week"></i> Trimestre
-            </button>
-            <button class="date-preset-btn" data-preset="mes-atual">
-                <i class="fas fa-calendar-day"></i> Este Mês
-            </button>
-        </div>
-        
-        <!-- Hidden inputs for compatibility -->
-        <input type="hidden" id="smartDataInicio" value="2023-01-01">
-        <input type="hidden" id="smartDataFim" value="2024-12-31">
-        <input type="hidden" id="smartTipoFilter" value="">
-    </div>
-
-    <!-- Primary Type Filters - Estilo Preset Buttons -->
-    <div class="primary-type-filters">
-        <div class="type-filter-header">
-            <div class="type-filter-title">
-                <i class="fas fa-filter"></i>
-                <span>Tipo de Lançamento</span>
-            </div>
-        </div>
-        
-        <div class="type-filter-buttons">
-            <button class="type-filter-btn active" data-type="">
-                <i class="fas fa-exchange-alt"></i> Ambos
-            </button>
-            <button class="type-filter-btn" data-type="Receita">
-                <i class="fas fa-arrow-up"></i> Entradas
-            </button>
-            <button class="type-filter-btn" data-type="Despesa">
-                <i class="fas fa-arrow-down"></i> Saídas
-            </button>
-        </div>
-    </div>
-
-    <!-- Status Pagamento Filters - Múltipla Escolha -->
-    <div class="payment-status-filters">
-        <div class="status-filter-header">
-            <div class="status-filter-title">
-                <i class="fas fa-clipboard-check"></i>
-                <span>Status de Pagamento</span>
-            </div>
-        </div>
-        
-        <div class="status-filter-buttons">
-            <button class="status-filter-btn active" data-status="todos">
-                <i class="fas fa-list"></i> Todos
-            </button>
-            <button class="status-filter-btn" data-status="realizado">
-                <i class="fas fa-check-circle"></i> Realizado
-            </button>
-            <button class="status-filter-btn" data-status="a-realizar">
-                <i class="fas fa-clock"></i> A Realizar
-            </button>
-            <button class="status-filter-btn" data-status="atrasado">
-                <i class="fas fa-exclamation-triangle"></i> Atrasado
-            </button>
-        </div>
-    </div>
-
-    <!-- Summary KPIs -->
-    <div class="financial-summary">
-        <div class="summary-item entradas">
-            <div class="summary-icon">
+    <!-- KPIs Row - Design Limpo -->
+    <div class="kpis-row">
+        <div class="kpi-card receitas">
+            <div class="kpi-icon">
                 <i class="fas fa-arrow-up"></i>
             </div>
-            <div class="summary-info">
-                <h3 id="filteredEntradas">R$ 0,00</h3>
-                <p>Entradas</p>
-                <span class="summary-count" id="countEntradas">0 transações</span>
+            <div class="kpi-content">
+                <h3 id="kpiReceitas">R$ 0,00</h3>
+                <p>Receitas</p>
+                <span class="kpi-count" id="countReceitas">0 transações</span>
             </div>
         </div>
         
-        <div class="summary-item saidas">
-            <div class="summary-icon">
+        <div class="kpi-card despesas">
+            <div class="kpi-icon">
                 <i class="fas fa-arrow-down"></i>
             </div>
-            <div class="summary-info">
-                <h3 id="filteredSaidas">R$ 0,00</h3>
-                <p>Saídas</p>
-                <span class="summary-count" id="countSaidas">0 transações</span>
+            <div class="kpi-content">
+                <h3 id="kpiDespesas">R$ 0,00</h3>
+                <p>Despesas</p>
+                <span class="kpi-count" id="countDespesas">0 transações</span>
             </div>
         </div>
         
-        <div class="summary-item saldo">
-            <div class="summary-icon">
+        <div class="kpi-card saldo">
+            <div class="kpi-icon">
                 <i class="fas fa-balance-scale"></i>
             </div>
-            <div class="summary-info">
-                <h3 id="filteredSaldo">R$ 0,00</h3>
+            <div class="kpi-content">
+                <h3 id="kpiSaldo">R$ 0,00</h3>
                 <p>Saldo Líquido</p>
-                <span class="summary-period" id="filteredPeriod">Período selecionado</span>
+                <span class="kpi-period" id="kpiPeriodo">Todos os períodos</span>
             </div>
         </div>
         
-        <div class="summary-item media">
-            <div class="summary-icon">
-                <i class="fas fa-calculator"></i>
+        <div class="kpi-card total">
+            <div class="kpi-icon">
+                <i class="fas fa-globe"></i>
             </div>
-            <div class="summary-info">
-                <h3 id="filteredMedia">R$ 0,00</h3>
-                <p>Valor Médio</p>
-                <span class="summary-count" id="totalFiltered">0 transações</span>
+            <div class="kpi-content">
+                <h3 id="kpiTotal">0</h3>
+                <p>Total Geral</p>
+                <span class="kpi-count" id="kpiMedia">Média: R$ 0,00</span>
             </div>
         </div>
     </div>
     
-    <!-- Interactive Filters -->
-    <div class="smart-filters">
-        <!-- Entity Filters Row -->
-        <div class="filter-row primary">
-            <div class="filter-group compact">
-                <select class="smart-filter-select" id="smartEmpresaFilter">
-                    <option value="">Todas as Empresas</option>
+    <!-- Filtros Rápidos -->
+    <div class="filtros-rapidos">
+        <div class="filtro-section">
+            <label>Tipo:</label>
+            <div class="filtro-buttons">
+                <button class="filtro-btn active" data-filtro="tipo" data-valor="">Todos</button>
+                <button class="filtro-btn" data-filtro="tipo" data-valor="Entrada">Entradas</button>
+                <button class="filtro-btn" data-filtro="tipo" data-valor="Saída">Saídas</button>
+            </div>
+        </div>
+        
+        <div class="filtro-section">
+            <label>Status:</label>
+            <div class="filtro-buttons">
+                <button class="filtro-btn active" data-filtro="status_pagamento" data-valor="">Todos</button>
+                <button class="filtro-btn" data-filtro="status_pagamento" data-valor="Realizado">Realizado</button>
+                <button class="filtro-btn" data-filtro="status_pagamento" data-valor="Previsao">Previsão</button>
+                <button class="filtro-btn" data-filtro="status_pagamento" data-valor="Atrasado">Atrasado</button>
+            </div>
+        </div>
+        
+        <div class="filtro-section">
+            <label>Período:</label>
+            <div class="filtro-buttons">
+                <button class="filtro-btn active" data-filtro="periodo" data-valor="todos">Todos</button>
+                <button class="filtro-btn" data-filtro="periodo" data-valor="mes_atual">Este Mês</button>
+                <button class="filtro-btn" data-filtro="periodo" data-valor="ano_atual">Este Ano</button>
+                <button class="filtro-btn" data-filtro="periodo" data-valor="ultimos_3_meses">Últimos 3 Meses</button>
+            </div>
+        </div>
+        
+        <div class="filtro-section">
+            <label>Data Início:</label>
+            <div class="filtro-date-input">
+                <input type="date" id="filtro-rapido-data-inicio" class="filtro-date" onchange="aplicarFiltroData()">
+            </div>
+        </div>
+        
+        <div class="filtro-section">
+            <label>Data Fim:</label>
+            <div class="filtro-date-input">
+                <input type="date" id="filtro-rapido-data-fim" class="filtro-date" onchange="aplicarFiltroData()">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Painel de Filtros Avançados (Colapsável) -->
+<div class="filtros-avancados" id="filtros-avancados">
+    <div class="filtros-header" onclick="toggleFiltrosAvancados()">
+        <h4><i class="fas fa-filter"></i> Filtros Avançados</h4>
+        <i class="fas fa-chevron-down toggle-icon"></i>
+    </div>
+    
+    <div class="filtros-content" id="filtros-content">
+        <!-- Linha 1: Entidades -->
+        <div class="filtros-row">
+            <div class="filtro-group">
+                <label>Empresas:</label>
+                <div id="multiselect-empresas"></div>
+            </div>
+            
+            <div class="filtro-group">
+                <label for="filtro-centro-tipologia">Centro - Tipologia:</label>
+                <select id="filtro-centro-tipologia" class="filtro-select">
+                    <option value="">Carregando...</option>
                 </select>
-                
-                <select class="smart-filter-select" id="smartCentroCustoFilter">
-                    <option value="">Todos os Centros de Custo</option>
+            </div>
+            
+            <div class="filtro-group">
+                <label>Centro - Nome:</label>
+                <div id="multiselect-centros"></div>
+            </div>
+        </div>
+        
+        <!-- Linha 2: Fornecedores e Planos -->
+        <div class="filtros-row">
+            <div class="filtro-group">
+                <label for="filtro-fornecedor-tipo">Fornecedor - Tipo:</label>
+                <select id="filtro-fornecedor-tipo" class="filtro-select">
+                    <option value="">Carregando...</option>
                 </select>
-                
-                <select class="smart-filter-select" id="smartPlanoFinanceiroFilter">
-                    <option value="">Todos os Planos Financeiros</option>
+            </div>
+            
+            <div class="filtro-group">
+                <label for="filtro-fornecedor-busca">Fornecedor - Busca:</label>
+                <div class="fornecedor-search-container">
+                    <input type="text" 
+                           id="filtro-fornecedor-busca" 
+                           class="fornecedor-search-input" 
+                           placeholder="Digite para buscar fornecedor..."
+                           autocomplete="off">
+                    <div class="fornecedor-search-results" id="fornecedor-search-results" style="display: none;">
+                        <!-- Resultados da busca aparecerão aqui -->
+                    </div>
+                    <input type="hidden" id="filtro-fornecedor-selected-id" name="fornecedor_id" value="">
+                    <div class="fornecedor-selected" id="fornecedor-selected" style="display: none;">
+                        <span class="fornecedor-selected-name"></span>
+                        <button type="button" class="fornecedor-clear" onclick="limparFornecedorSelecionado()">×</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="filtro-group">
+                <label for="filtro-plano-nivel">Plano - Nível:</label>
+                <select id="filtro-plano-nivel" class="filtro-select">
+                    <option value="">Todos os níveis</option>
+                    <option value="1">Nível 1</option>
+                    <option value="2">Nível 2</option>
+                    <option value="3">Nível 3</option>
+                    <option value="4">Nível 4</option>
                 </select>
             </div>
         </div>
         
-        <!-- Secondary Filter Row -->
-        <div class="filter-row secondary">
-            <div class="filter-group compact">
-                <!-- Select de tipo removido - agora é botão acima -->
-                <select class="smart-filter-select" id="smartStatusNegociacaoFilter">
-                    <option value="">Status Negociação</option>
-                    <option value="NEGOCIADO">NEGOCIADO</option>
-                    <option value="PARCIALMENTE NEGOCIADO">PARCIALMENTE NEGOCIADO</option>
-                    <option value="NÃO NEGOCIADO">NÃO NEGOCIADO</option>
-                    <option value="A NEGOCIAR">A NEGOCIAR</option>
-                    <option value="PAGO">PAGO</option>
+        <!-- Linha 3: Planos Específicos e Valores -->
+        <div class="filtros-row">
+            <div class="filtro-group">
+                <label for="filtro-plano-especifico">Plano Específico:</label>
+                <select id="filtro-plano-especifico" class="filtro-select">
+                    <option value="">Carregando...</option>
                 </select>
-                
-                <select class="smart-filter-select" id="smartTipologiaFilter">
-                    <option value="">Tipologia</option>
-                    <option value="Administrativo">Administrativo</option>
-                    <option value="Obra Privada">Obra Privada</option>
-                    <option value="Obra Empreendimento">Obra Empreendimento</option>
+            </div>
+            
+            <div class="filtro-group">
+                <label for="filtro-faixa-valor">Faixa de Valor:</label>
+                <select id="filtro-faixa-valor" class="filtro-select">
+                    <option value="">Carregando...</option>
+                </select>
+            </div>
+            
+            <div class="filtro-group">
+                <label for="filtro-origem">Origem:</label>
+                <select id="filtro-origem" class="filtro-select">
+                    <option value="">Carregando...</option>
                 </select>
             </div>
         </div>
         
-        
-        <!-- Filter Actions -->
-        <div class="smart-filter-actions">
-            <button class="smart-action-btn clear" onclick="clearSmartFilters()">
-                <i class="fas fa-eraser"></i> Limpar Filtros
+        <!-- Ações dos Filtros -->
+        <div class="filtros-actions-container">
+            <button class="btn btn-secondary" onclick="limparFiltros()">
+                <i class="fas fa-eraser"></i> Limpar
             </button>
-            <button class="smart-action-btn apply" onclick="applySmartFilters()">
-                <i class="fas fa-filter"></i> Aplicar Filtros
-            </button>
-            <button class="smart-action-btn save" onclick="saveFilterPreset()">
-                <i class="fas fa-bookmark"></i> Salvar Preset
+            <button class="btn btn-primary" onclick="aplicarFiltros()">
+                <i class="fas fa-search"></i> Aplicar
             </button>
         </div>
     </div>
 </div>
 
+<!-- Status Loading e Informações -->
+<div class="status-info">
+    <div class="loading-status" id="loading-status">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>Carregando dados...</span>
+    </div>
+    
+    <div class="results-info" id="results-info" style="display: none;">
+        <span>Mostrando <strong id="results-showing">0</strong> de <strong id="results-total">0</strong> transações</span>
+        <span class="separator">|</span>
+        <span>Página <strong id="results-page">1</strong> de <strong id="results-pages">1</strong></span>
+    </div>
+</div>
 
-
-<!-- Enhanced View Toggle - Híbrido com mais opções -->
-<div class="view-tabs enhanced">
-    <div class="view-controls">
-        <button class="tab-button active" id="view-table-btn" data-view="table">
+<!-- View Toggle e Configurações -->
+<div class="view-controls">
+    <div class="view-tabs">
+        <button class="tab-button active" data-view="table">
             <i class="fas fa-table"></i> Tabela
         </button>
-        <button class="tab-button" id="view-cards-btn" data-view="cards">
+        <button class="tab-button" data-view="cards">
             <i class="fas fa-th-large"></i> Cards
         </button>
-        <button class="tab-button" id="view-timeline-btn" data-view="timeline">
+        <button class="tab-button" data-view="timeline">
             <i class="fas fa-project-diagram"></i> Timeline
         </button>
-        <button class="tab-button" id="view-parcelas-btn" data-view="parcelas">
-            <i class="fas fa-layer-group"></i> Por Parcelas
-        </button>
     </div>
     
-    <div class="view-info">
-        <span>Mostrando: <strong id="resultCount">0</strong> transações</span>
-        <span class="total-value">Total: <strong id="totalValue">R$ 0,00</strong></span>
-    </div>
-    
-    <div class="sort-options">
-        <select class="sort-select" id="sortBy">
-            <option value="data_vencimento_desc">Vencimento ↓</option>
-            <option value="data_vencimento_asc">Vencimento ↑</option>
-            <option value="valor_desc">Valor ↓</option>
-            <option value="valor_asc">Valor ↑</option>
-            <option value="titulo_asc">Título A-Z</option>
-            <option value="data_lancamento_desc">Lançamento ↓</option>
+    <div class="view-options">
+        <select id="ordenacao" class="view-select">
+            <option value="data_vencimento:desc">Vencimento ↓</option>
+            <option value="data_vencimento:asc">Vencimento ↑</option>
+            <option value="valor:desc">Valor ↓</option>
+            <option value="valor:asc">Valor ↑</option>
+            <option value="titulo:asc">Título A-Z</option>
+        </select>
+        
+        <select id="per-page" class="view-select">
+            <option value="25">25 por página</option>
+            <option value="50" selected>50 por página</option>
+            <option value="100">100 por página</option>
+            <option value="200">200 por página</option>
         </select>
     </div>
 </div>
 
-<!-- View: Tabela (padrão) -->
-<div class="view-content active" id="view-table">
-    <div class="table-container">
-        <table class="transacoes-table">
-            <thead>
-                <tr>
-                    <th>Status</th>
-                    <th>Título</th>
-                    <th>Tipo</th>
-                    <th>Valor</th>
-                    <th>Parcela</th>
-                    <th>Vencimento</th>
-                    <th>Fornecedor</th>
-                    <th>Centro Custo</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody id="transacoesTableBody">
-                <!-- Linhas serão carregadas via JavaScript -->
-            </tbody>
-        </table>
+<!-- Content Area - Views -->
+<div class="content-area">
+    <!-- View: Table -->
+    <div class="view-container active" id="view-table">
+        <!-- TableComponent será renderizado aqui -->
     </div>
-</div>
-
-<!-- View: Cards com status visual -->
-<div class="view-content" id="view-cards" style="display: none;">
-    <div class="transacoes-grid" id="transacoesCards">
-        <!-- Cards serão carregados via JavaScript -->
+    
+    <!-- View: Cards -->
+    <div class="view-container" id="view-cards" style="display: none;">
+        <div class="cards-grid" id="transacoes-cards">
+            <!-- Cards serão carregados via JavaScript -->
+        </div>
     </div>
-</div>
-
-<!-- View: Timeline por data -->
-<div class="view-content" id="view-timeline" style="display: none;">
-    <div class="timeline-container" id="timelineContainer">
-        <!-- Timeline será carregada via JavaScript -->
-    </div>
-</div>
-
-<!-- View: Agrupado por parcelas -->
-<div class="view-content" id="view-parcelas" style="display: none;">
-    <div class="parcelas-container" id="parcelasContainer">
-        <!-- Parcelas serão carregadas via JavaScript -->
+    
+    <!-- View: Timeline -->
+    <div class="view-container" id="view-timeline" style="display: none;">
+        <div class="timeline-container" id="transacoes-timeline">
+            <!-- Timeline será carregada via JavaScript -->
+        </div>
     </div>
 </div>
 
@@ -328,264 +307,44 @@
     </div>
 </div>
 
-<!-- Estado vazio -->
+<!-- Estado Vazio -->
 <div class="empty-state" id="empty-state" style="display: none;">
-    <i class="fas fa-exchange-alt"></i>
+    <i class="fas fa-search"></i>
     <h3>Nenhuma transação encontrada</h3>
-    <p>Não há transações cadastradas ou que correspondem aos filtros aplicados.</p>
-    <button class="btn page-actions btn" onclick="novaTransacao()">
-        <i class="fas fa-plus"></i> Criar primeira transação
+    <p>Ajuste os filtros ou verifique os critérios de busca.</p>
+    <button class="btn btn-primary" onclick="limparFiltros()">
+        <i class="fas fa-eraser"></i> Limpar Filtros
     </button>
 </div>
 
-<!-- Loading -->
-<div class="loading" id="loading" style="display: none;">
-    <i class="fas fa-spinner"></i>
-    <span>Carregando transações...</span>
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loading-overlay" style="display: none;">
+    <div class="loading-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Carregando transações...</p>
+    </div>
 </div>
 
-<!-- Modal Transação - CRUD completo -->
+<!-- Modal Nova Transação (mantido do design anterior) -->
 <div id="modal-transacao" class="modal">
     <div class="modal-content large">
         <div class="modal-header">
-            <h3 id="modal-title">Nova Transação</h3>
+            <h3>Nova Transação</h3>
             <button class="modal-close" type="button">&times;</button>
         </div>
-        
-        <form id="form-transacao" class="modal-body">
-            <input type="hidden" id="transacao_id" name="transacao_id">
-            
-            <!-- Seção: Dados Principais -->
-            <div class="form-section">
-                <div class="form-section-title">
-                    <i class="fas fa-edit"></i>
-                    Dados Principais
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="titulo">Título da Transação</label>
-                        <input type="text" id="titulo" name="titulo" required maxlength="255" 
-                               placeholder="Descrição da receita ou despesa">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="tipo">Tipo</label>
-                        <select id="tipo" name="tipo" required>
-                            <option value="">Selecione...</option>
-                            <option value="Receita">Receita</option>
-                            <option value="Despesa">Despesa</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="valor">Valor</label>
-                        <input type="number" id="valor" name="valor" required step="0.01" min="0" 
-                               placeholder="0,00">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="data_vencimento">Data Vencimento</label>
-                        <input type="date" id="data_vencimento" name="data_vencimento" required>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Seção: Parcelamento -->
-            <div class="form-section">
-                <div class="form-section-title">
-                    <i class="fas fa-layer-group"></i>
-                    Sistema de Parcelamento
-                    <div class="form-toggle">
-                        <input type="checkbox" id="parcelamento_ativo" name="parcelamento_ativo">
-                        <label for="parcelamento_ativo">Ativar parcelamento</label>
-                    </div>
-                </div>
-                
-                <div class="parcelas-config" id="parcelas-config" style="display: none;">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="parcela_total">Número de Parcelas</label>
-                            <select id="parcela_total" name="parcela_total">
-                                <option value="1">1x (À vista)</option>
-                                <option value="2">2x</option>
-                                <option value="3">3x</option>
-                                <option value="4">4x</option>
-                                <option value="5">5x</option>
-                                <option value="6">6x</option>
-                                <option value="10">10x</option>
-                                <option value="12">12x</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="intervalo_dias">Intervalo (dias)</label>
-                            <select id="intervalo_dias" name="intervalo_dias">
-                                <option value="30">30 dias (Mensal)</option>
-                                <option value="15">15 dias (Quinzenal)</option>
-                                <option value="7">7 dias (Semanal)</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="preview-parcelas" id="preview-parcelas">
-                        <!-- Preview será carregado dinamicamente -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Seção: Vínculos -->
-            <div class="form-section">
-                <div class="form-section-title">
-                    <i class="fas fa-link"></i>
-                    Vínculos e Categorização
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="cliente_fornecedor_id">Cliente/Fornecedor</label>
-                        <select id="cliente_fornecedor_id" name="cliente_fornecedor_id" required>
-                            <option value="">Selecione...</option>
-                            <!-- Carregado dinamicamente -->
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="empresa_id">Empresa</label>
-                        <select id="empresa_id" name="empresa_id" required>
-                            <option value="">Selecione...</option>
-                            <!-- Carregado dinamicamente -->
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="centro_custo_id">Centro de Custo</label>
-                        <select id="centro_custo_id" name="centro_custo_id" required>
-                            <option value="">Selecione...</option>
-                            <!-- Carregado dinamicamente -->
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="plano_financeiro_id">Plano Financeiro</label>
-                        <select id="plano_financeiro_id" name="plano_financeiro_id" required>
-                            <option value="">Selecione...</option>
-                            <!-- Carregado dinamicamente -->
-                        </select>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Seção: Status e Observações -->
-            <div class="form-section">
-                <div class="form-section-title">
-                    <i class="fas fa-info-circle"></i>
-                    Status e Observações
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="status_negociacao">Status Negociação</label>
-                        <select id="status_negociacao" name="status_negociacao">
-                            <option value="">Selecione...</option>
-                            <option value="NEGOCIADO">NEGOCIADO</option>
-                            <option value="PARCIALMENTE NEGOCIADO">PARCIALMENTE NEGOCIADO</option>
-                            <option value="NÃO NEGOCIADO">NÃO NEGOCIADO</option>
-                            <option value="A NEGOCIAR">A NEGOCIAR</option>
-                            <option value="PAGO">PAGO</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="status_pagamento">Status Pagamento</label>
-                        <select id="status_pagamento" name="status_pagamento">
-                            <option value="Á realizar">Á realizar</option>
-                            <option value="Realizado">Realizado</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="observacao">Observações</label>
-                    <textarea id="observacao" name="observacao" rows="3" maxlength="500" 
-                              placeholder="Observações adicionais sobre a transação..."></textarea>
-                </div>
-            </div>
-        </form>
-        
+        <div class="modal-body">
+            <p>Modal de nova transação será implementado...</p>
+        </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" id="btn-cancelar">
-                <i class="fas fa-times"></i> Cancelar
-            </button>
-            <button type="button" class="btn btn-info" id="btn-preview" style="display: none;">
-                <i class="fas fa-eye"></i> Preview Parcelas
-            </button>
-            <button type="submit" form="form-transacao" class="btn btn-primary" id="btn-salvar">
-                <i class="fas fa-save"></i> Salvar
-            </button>
+            <button type="button" class="btn btn-secondary">Cancelar</button>
+            <button type="button" class="btn btn-primary">Salvar</button>
         </div>
     </div>
 </div>
 
-<!-- Modal Baixa/Liquidação -->
-<div id="modal-baixa" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Efetuar Baixa</h3>
-            <button class="modal-close" type="button">&times;</button>
-        </div>
-        
-        <form id="form-baixa" class="modal-body">
-            <input type="hidden" id="baixa_transacao_id" name="transacao_id">
-            
-            <div class="transacao-info" id="transacao-info">
-                <!-- Informações da transação serão carregadas -->
-            </div>
-            
-            <div class="form-group">
-                <label for="conta_bancaria_id">Conta Bancária</label>
-                <select id="conta_bancaria_id" name="conta_bancaria_id" required>
-                    <option value="">Selecione a conta...</option>
-                    <!-- Carregado dinamicamente -->
-                </select>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="data_pagamento">Data do Pagamento</label>
-                    <input type="date" id="data_pagamento" name="data_pagamento" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="valor_pago">Valor Pago</label>
-                    <input type="number" id="valor_pago" name="valor_pago" required step="0.01" min="0">
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="observacao_baixa">Observações da Baixa</label>
-                <textarea id="observacao_baixa" name="observacao_baixa" rows="2" 
-                          placeholder="Observações sobre o pagamento/recebimento..."></textarea>
-            </div>
-        </form>
-        
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" id="btn-cancelar-baixa">
-                <i class="fas fa-times"></i> Cancelar
-            </button>
-            <button type="submit" form="form-baixa" class="btn btn-success" id="btn-confirmar-baixa">
-                <i class="fas fa-check"></i> Confirmar Baixa
-            </button>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/transacoes.js') }}?v=1.9"></script>
-<script src="{{ url_for('static', filename='js/smart_financial_header.js') }}?v=1.1"></script>
+<script src="{{ url_for('static', filename='js/components/table_component.js') }}?v=1.0"></script>
+<script src="{{ url_for('static', filename='js/transacoes_v3.js') }}?v=3.0"></script>
 {% endblock %}

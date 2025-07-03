@@ -1,1161 +1,926 @@
-// ====================================
-// Selleta Financeiro - Transações JS
-// Híbrido: Cards + Tabela + Timeline + Parcelas
-// ====================================
+/**
+ * TRANSAÇÕES NOVO - JavaScript v2.0
+ * ===================================
+ * Sistema completo de filtros e visualização
+ * Arquitetura testada: Backend → API → Frontend
+ */
 
-console.log('📄 Carregando transacoes.js v1.9...');
+// ==========================================
+// ESTADO GLOBAL
+// ==========================================
 
-let currentView = 'table';
-let currentPage = 1;
-let currentFilters = {};
-let allTransacoes = [];
-let currentViewType = 'previsao'; // Estado do view toggle
+const TransacoesApp = {
+    // Estado da aplicação
+    state: {
+        filtros: {},
+        filtrosDisponiveis: {},
+        transacoes: [],
+        kpis: {},
+        page: 1,
+        per_page: 50,
+        total: 0,
+        loading: false,
+        view: 'table',
+        sortBy: 'data_vencimento',
+        sortDirection: 'desc'
+    },
+    
+    // Cache para otimização
+    cache: {
+        filtrosCarregados: false,
+        ultimaConsulta: null
+    },
+    
+    // Instâncias de multiselect
+    multiselects: {
+        empresas: null,
+        centros: null
+    }
+};
+
+// ==========================================
+// INICIALIZAÇÃO
+// ==========================================
 
 $(document).ready(function() {
-    initializeTransacoes();
+    console.log('🚀 Inicializando Transações App v2.0...');
+    initializeApp();
 });
 
-function initializeTransacoes() {
-    console.log('🚀 Inicializando módulo de transações...');
-    
+async function initializeApp() {
     try {
-        // Carregar dados iniciais
-        loadInitialData();
+        showLoading(true);
         
-        // Configurar event listeners
+        // 1. Carregar filtros disponíveis
+        console.log('📋 Carregando filtros disponíveis...');
+        await carregarFiltrosDisponiveis();
+        
+        // 2. Configurar filtros padrão
+        console.log('⚙️ Configurando filtros padrão...');
+        configurarFiltrosPadrao();
+        
+        // 3. Configurar event listeners
+        console.log('🎯 Configurando event listeners...');
         setupEventListeners();
         
-        // Carregar KPIs primeiro
-        loadFinancialKPIs();
+        // 3.1. Configurar busca de fornecedores
+        console.log('🔍 Configurando busca de fornecedores...');
+        setupFornecedorSearch();
         
-        // Carregar transações
-        loadTransacoes();
+        // 3.2. Inicializar multiselects
+        console.log('☑️ Inicializando multiselects...');
+        initializeMultiselects();
         
-        // Inicializar Smart Financial Header
-        initializeSmartFilters();
+        // 4. Carregar dados iniciais
+        console.log('📊 Carregando dados iniciais...');
+        await carregarDados();
         
-        console.log('✅ Módulo de transações inicializado com sucesso');
+        showLoading(false);
+        console.log('✅ App inicializado com sucesso!');
+        
     } catch (error) {
         console.error('❌ Erro na inicialização:', error);
+        showError('Erro ao inicializar aplicação: ' + error.message);
+        showLoading(false);
     }
 }
 
-function loadInitialData() {
-    console.log('📦 Carregando dados iniciais...');
-    
-    // Carregar dropdowns
-    loadEmpresas();
-    loadCentrosCusto();
-    loadPlanosFinanceiros();
-    loadFornecedores();
-    loadContasBancarias();
-    
-    // Configurar datas padrão
-    const hoje = new Date();
-    const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-    const ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-    
-    $('#dataVencimentoInicio').val(formatDate(primeiroDiaMes));
-    $('#dataVencimentoFim').val(formatDate(ultimoDiaMes));
-    $('#data_vencimento').val(formatDate(hoje));
-    $('#data_pagamento').val(formatDate(hoje));
+// ==========================================
+// CARREGAMENTO DE FILTROS
+// ==========================================
+
+async function carregarFiltrosDisponiveis() {
+    try {
+        const response = await fetch('/api/transacoes/filtros', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        TransacoesApp.state.filtrosDisponiveis = await response.json();
+        TransacoesApp.cache.filtrosCarregados = true;
+        
+        console.log('✅ Filtros carregados:', TransacoesApp.state.filtrosDisponiveis);
+        
+        // Popular selects
+        popularFiltrosNoDOM();
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar filtros:', error);
+        throw error;
+    }
 }
+
+function popularFiltrosNoDOM() {
+    const filtros = TransacoesApp.state.filtrosDisponiveis;
+    
+    // Empresas
+    popularSelect('filtro-empresa', filtros.entidades.empresas);
+    
+    // Centros de Custo
+    popularSelect('filtro-centro-tipologia', filtros.entidades.centros_custo.por_tipologia);
+    // Centro-nome será carregado dinamicamente via filtrarCentrosPorTipologia
+    filtrarCentrosPorTipologia(''); // Carregar todos inicialmente
+    
+    // Fornecedores - Apenas tipos (busca é personalizada)
+    popularSelect('filtro-fornecedor-tipo', filtros.entidades.fornecedores.por_tipo);
+    
+    // Planos Financeiros
+    popularPlanosFinanceiros();
+    
+    // Filtros avançados
+    popularSelect('filtro-faixa-valor', filtros.avancados.faixas_valor);
+    popularSelect('filtro-tipo-parcela', filtros.avancados.tipos_parcela);
+    
+    console.log('✅ Filtros populados no DOM');
+}
+
+function popularSelect(selectId, opcoes) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    
+    select.innerHTML = '';
+    
+    opcoes.forEach(opcao => {
+        const option = document.createElement('option');
+        option.value = opcao.value;
+        option.textContent = opcao.label;
+        select.appendChild(option);
+    });
+}
+
+function popularPlanosFinanceiros() {
+    const planos = TransacoesApp.state.filtrosDisponiveis.entidades.plano_financeiro;
+    
+    // Popular select de planos específicos (todos os níveis)
+    const selectPlano = document.getElementById('filtro-plano-especifico');
+    if (selectPlano) {
+        selectPlano.innerHTML = '<option value="">Todos os planos</option>';
+        
+        // Adicionar planos por nível
+        for (let nivel = 1; nivel <= 4; nivel++) {
+            const planosNivel = planos.por_nivel[nivel.toString()];
+            if (planosNivel && planosNivel.length > 1) { // >1 porque primeiro é "Todos"
+                planosNivel.slice(1).forEach(plano => {
+                    const option = document.createElement('option');
+                    option.value = plano.value;
+                    option.textContent = plano.label;
+                    option.dataset.nivel = nivel;
+                    selectPlano.appendChild(option);
+                });
+            }
+        }
+    }
+}
+
+// ==========================================
+// CONFIGURAÇÃO PADRÃO
+// ==========================================
+
+function configurarFiltrosPadrao() {
+    // Filtros padrão conforme especificado
+    TransacoesApp.state.filtros = {
+        tipo: '',               // Todos os tipos
+        status_pagamento: '',   // Todos os status
+        status_negociacao: '',  // Todos os status
+        periodo: 'todos',       // Todos os períodos
+        empresa_id: '',         // Todas as empresas (filtro único)
+        empresas_ids: [],       // Empresas selecionadas (filtro múltiplo)
+        centro_custo_tipologia: '', // Todas as tipologias
+        centro_custo_id: '',    // Todos os centros (filtro único)
+        centros_nomes: [],      // Centros selecionados (filtro múltiplo)
+        fornecedor_tipo: '',    // Todos os tipos
+        fornecedor_id: '',      // Todos os fornecedores
+        plano_nivel: '',        // Todos os níveis
+        plano_id: '',          // Todos os planos
+        faixa_valor: '',       // Todos os valores
+        tipo_parcela: '',      // Todas as parcelas
+        data_inicio: '',       // Data livre
+        data_fim: ''           // Data livre
+    };
+    
+    // Configurar estado de paginação
+    TransacoesApp.state.page = 1;
+    TransacoesApp.state.per_page = 50;
+    TransacoesApp.state.view = 'table';
+    
+    // Aplicar ao DOM
+    aplicarFiltrosAoDOM();
+    
+    console.log('✅ Filtros padrão configurados');
+}
+
+function aplicarFiltrosAoDOM() {
+    const filtros = TransacoesApp.state.filtros;
+    
+    // Aplicar filtros rápidos
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+        const filtro = btn.dataset.filtro;
+        const valor = btn.dataset.valor;
+        
+        if (filtros[filtro] === valor) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    // SINCRONIZAÇÃO ESPECIAL: Datas personalizadas vs Períodos predefinidos
+    const temDatasPersonalizadas = filtros.data_inicio || filtros.data_fim;
+    if (temDatasPersonalizadas) {
+        // Se tem datas personalizadas, garantir que período está vazio e "Todos" ativo
+        document.querySelectorAll('[data-filtro="periodo"]').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        const btnTodos = document.querySelector('[data-filtro="periodo"][data-valor="todos"]');
+        if (btnTodos) {
+            btnTodos.classList.add('active');
+        }
+    }
+    
+    // Aplicar filtros avançados aos selects
+    Object.keys(filtros).forEach(key => {
+        const elemento = document.getElementById(`filtro-${key.replace('_', '-')}`);
+        if (elemento && elemento.tagName === 'SELECT') {
+            elemento.value = filtros[key];
+        } else if (elemento && elemento.type === 'date') {
+            elemento.value = filtros[key];
+        }
+    });
+    
+    // Aplicar datas personalizadas aos inputs específicos
+    const dataInicioInput = document.getElementById('filtro-rapido-data-inicio');
+    const dataFimInput = document.getElementById('filtro-rapido-data-fim');
+    
+    if (dataInicioInput) dataInicioInput.value = filtros.data_inicio || '';
+    if (dataFimInput) dataFimInput.value = filtros.data_fim || '';
+    
+    // Aplicar configurações de view
+    document.getElementById('per-page').value = TransacoesApp.state.per_page;
+    
+    const sortValue = `${TransacoesApp.state.sortBy}:${TransacoesApp.state.sortDirection}`;
+    document.getElementById('ordenacao').value = sortValue;
+}
+
+// ==========================================
+// EVENT LISTENERS
+// ==========================================
 
 function setupEventListeners() {
-    console.log('🔧 Configurando event listeners...');
-    
-    // View toggle
-    $('.tab-button').click(function() {
-        switchView($(this).data('view'));
+    // Filtros rápidos
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const filtro = this.dataset.filtro;
+            const valor = this.dataset.valor;
+            
+            // Remove active de outros botões do mesmo grupo
+            document.querySelectorAll(`[data-filtro="${filtro}"]`).forEach(b => {
+                b.classList.remove('active');
+            });
+            
+            // Adiciona active ao botão clicado
+            this.classList.add('active');
+            
+            // Atualiza estado
+            TransacoesApp.state.filtros[filtro] = valor;
+            
+            // LÓGICA ESPECIAL: Se for filtro de período, limpar datas personalizadas
+            if (filtro === 'periodo' && valor !== '') {
+                console.log('🔄 Período predefinido selecionado - limpando datas personalizadas');
+                
+                // Limpar datas personalizadas
+                TransacoesApp.state.filtros.data_inicio = '';
+                TransacoesApp.state.filtros.data_fim = '';
+                
+                // Limpar campos de data no DOM
+                const dataInicioInput = document.getElementById('filtro-rapido-data-inicio');
+                const dataFimInput = document.getElementById('filtro-rapido-data-fim');
+                
+                if (dataInicioInput) dataInicioInput.value = '';
+                if (dataFimInput) dataFimInput.value = '';
+                
+                console.log('✅ Datas personalizadas limpas para período:', valor);
+            }
+            
+            // Recarregar dados
+            carregarDados();
+        });
     });
     
-    // View Type Toggle (Previsão/Consolidado/Atrasado)
-    $('.view-toggle-btn').click(function() {
-        const viewType = $(this).data('view');
-        switchViewType(viewType);
+    // Toggle filtros avançados
+    window.toggleFiltrosAvancados = function() {
+        const filtros = document.getElementById('filtros-avancados');
+        filtros.classList.toggle('collapsed');
+    };
+    
+    // Aplicar filtros avançados
+    window.aplicarFiltros = function() {
+        coletarFiltrosAvancados();
+        carregarDados();
+    };
+    
+    // Limpar filtros
+    window.limparFiltros = function() {
+        console.log('🧹 Limpando todos os filtros...');
+        
+        // Limpar multiselects
+        if (TransacoesApp.multiselects.empresas) {
+            TransacoesApp.multiselects.empresas.clearSelection();
+        }
+        if (TransacoesApp.multiselects.centros) {
+            TransacoesApp.multiselects.centros.clearSelection();
+        }
+        
+        // Limpar fornecedor selecionado
+        if (document.getElementById('filtro-fornecedor-selected-id').value) {
+            limparFornecedorSelecionado();
+        }
+        
+        // Configurar filtros padrão
+        configurarFiltrosPadrao();
+        carregarDados();
+        
+        console.log('✅ Filtros limpos');
+    };
+    
+    // Mudança de view
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const novaView = this.dataset.view;
+            
+            // Atualizar botões
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Atualizar views
+            document.querySelectorAll('.view-container').forEach(v => v.style.display = 'none');
+            document.getElementById(`view-${novaView}`).style.display = 'block';
+            
+            TransacoesApp.state.view = novaView;
+            
+            // Re-renderizar dados na nova view
+            renderizarTransacoes();
+        });
     });
     
-    // Date Slider
-    setupDateSlider();
-    
-    // Filtros
-    $('#searchInput').on('input', debounce(applyFilters, 300));
-    $('.filter-select').change(applyFilters);
-    $('.date-input').change(applyFilters);
-    
-    // Quick filters
-    $('.quick-filter-btn').click(function() {
-        const filter = $(this).data('filter');
-        applyQuickFilter(filter);
+    // Mudança de ordenação
+    document.getElementById('ordenacao').addEventListener('change', function() {
+        const [campo, direcao] = this.value.split(':');
+        TransacoesApp.state.sortBy = campo;
+        TransacoesApp.state.sortDirection = direcao;
+        carregarDados();
     });
     
-    // Parcelamento toggle
-    $('#parcelamento_ativo').change(function() {
-        toggleParcelamento($(this).is(':checked'));
+    // Mudança de per_page
+    document.getElementById('per-page').addEventListener('change', function() {
+        TransacoesApp.state.per_page = parseInt(this.value);
+        TransacoesApp.state.page = 1; // Reset para primeira página
+        carregarDados();
     });
     
-    // Preview parcelas
-    $('#parcela_total, #intervalo_dias, #valor, #data_vencimento').change(function() {
-        if ($('#parcelamento_ativo').is(':checked')) {
-            updatePreviewParcelas();
+    // Filtros avançados - mudança em tempo real
+    setupFiltrosAvancadosListeners();
+    
+    console.log('✅ Event listeners configurados');
+}
+
+function coletarFiltrosAvancados() {
+    // Coleta todos os valores dos filtros avançados
+    const filtros = TransacoesApp.state.filtros;
+    
+    filtros.empresa_id = document.getElementById('filtro-empresa').value;
+    filtros.centro_custo_tipologia = document.getElementById('filtro-centro-tipologia').value;
+    filtros.centro_custo_id = document.getElementById('filtro-centro-nome').value;
+    filtros.fornecedor_tipo = document.getElementById('filtro-fornecedor-tipo').value;
+    filtros.fornecedor_id = document.getElementById('filtro-fornecedor-selected-id').value; // BUSCA PERSONALIZADA
+    filtros.plano_nivel = document.getElementById('filtro-plano-nivel').value;
+    filtros.plano_id = document.getElementById('filtro-plano-especifico').value;
+    filtros.faixa_valor = document.getElementById('filtro-faixa-valor').value;
+    filtros.tipo_parcela = document.getElementById('filtro-tipo-parcela').value;
+    filtros.data_inicio = document.getElementById('filtro-data-inicio').value;
+    filtros.data_fim = document.getElementById('filtro-data-fim').value;
+    
+    console.log('📋 Filtros coletados:', filtros);
+}
+
+function setupFiltrosAvancadosListeners() {
+    // Centro de custo - tipologia afeta lista de nomes
+    document.getElementById('filtro-centro-tipologia').addEventListener('change', function() {
+        filtrarCentrosPorTipologia(this.value);
+    });
+    
+    // Fornecedor - tipo afeta busca (aplicar filtro na busca personalizada)
+    document.getElementById('filtro-fornecedor-tipo').addEventListener('change', function() {
+        // Limpar fornecedor selecionado quando mudar o tipo
+        if (document.getElementById('filtro-fornecedor-selected-id').value) {
+            limparFornecedorSelecionado();
         }
     });
     
-    // Modal events
-    setupModalEvents();
-    
-    // Ordenação
-    $('#sortBy').change(function() {
-        currentFilters.sort = $(this).val();
-        loadTransacoes();
+    // Plano - nível afeta planos específicos
+    document.getElementById('filtro-plano-nivel').addEventListener('change', function() {
+        filtrarPlanosPorNivel(this.value);
     });
 }
 
-function setupModalEvents() {
-    // Modal transação
-    $('#modal-transacao .modal-close, #btn-cancelar').click(function() {
-        closeModal('#modal-transacao');
-    });
+async function filtrarCentrosPorTipologia(tipologia) {
+    const select = document.getElementById('filtro-centro-nome');
     
-    // Modal baixa
-    $('#modal-baixa .modal-close, #btn-cancelar-baixa').click(function() {
-        closeModal('#modal-baixa');
-    });
-    
-    // Submit forms
-    $('#form-transacao').submit(function(e) {
-        e.preventDefault();
-        saveTransacao();
-    });
-    
-    $('#form-baixa').submit(function(e) {
-        e.preventDefault();
-        efetuarBaixa();
-    });
-    
-    // Preview button
-    $('#btn-preview').click(function() {
-        showPreviewParcelas();
-    });
-}
-
-function switchView(view) {
-    console.log(`🔄 Mudando para view: ${view}`);
-    
-    currentView = view;
-    
-    // Update buttons
-    $('.tab-button').removeClass('active');
-    $(`[data-view="${view}"]`).addClass('active');
-    
-    // Hide all views
-    $('.view-content').removeClass('active').hide();
-    
-    // Show selected view
-    $(`#view-${view}`).addClass('active').show();
-    
-    // Render content based on view
-    renderCurrentView();
-}
-
-function renderCurrentView() {
-    switch(currentView) {
-        case 'table':
-            renderTableView();
-            break;
-        case 'cards':
-            renderCardsView();
-            break;
-        case 'timeline':
-            renderTimelineView();
-            break;
-        case 'parcelas':
-            renderParcelasView();
-            break;
+    try {
+        // Buscar detalhes dos centros de custo
+        const response = await fetch('/api/centros-custo/detalhes', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        select.innerHTML = '<option value="">Todos os centros</option>';
+        
+        // Filtrar por tipologia se especificada
+        const centrosFiltrados = tipologia 
+            ? data.centros.filter(c => c.tipologia === tipologia)
+            : data.centros;
+        
+        centrosFiltrados.forEach(centro => {
+            const option = document.createElement('option');
+            option.value = centro.nome; // Usar nome como value
+            option.textContent = centro.label; // Label com informações extras
+            option.title = `Empresas: ${centro.empresas.join(', ')}`;
+            select.appendChild(option);
+        });
+        
+        console.log(`✅ Centros filtrados por tipologia "${tipologia}": ${centrosFiltrados.length} centros`);
+        
+    } catch (error) {
+        console.error('Erro ao filtrar centros por tipologia:', error);
+        // Fallback para método anterior
+        const centros = TransacoesApp.state.filtrosDisponiveis.entidades.centros_custo.por_mascara;
+        
+        select.innerHTML = '<option value="">Todos os centros</option>';
+        
+        centros.slice(1).forEach(centro => {
+            if (!tipologia || centro.tipologia === tipologia) {
+                const option = document.createElement('option');
+                option.value = centro.value;
+                option.textContent = centro.label;
+                select.appendChild(option);
+            }
+        });
     }
 }
 
-// ==================================
-// CARREGAR DADOS
-// ==================================
+// FUNÇÃO REMOVIDA: filtrarFornecedoresPorTipo - agora usa busca personalizada
 
-function loadFinancialKPIs() {
-    console.log('📊 Carregando KPIs financeiros...');
+function filtrarPlanosPorNivel(nivel) {
+    const select = document.getElementById('filtro-plano-especifico');
     
-    $.ajax({
-        url: '/api/dashboard/kpis',
-        method: 'GET',
-        success: function(data) {
-            console.log('✅ KPIs carregados:', data);
-            updateFinancialHeader(data);
-        },
-        error: function(xhr, status, error) {
-            console.error('❌ Erro ao carregar KPIs:', error);
-            console.log('⚠️ Usando dados de fallback...');
-            
-            // Dados de fallback baseados nos valores reais da API
-            const fallbackData = {
-                receitas_mes: 161720.08,
-                despesas_mes: 1072697.25,
-                total_transacoes: 27353,
-                contas_vencer: 19,
-                saldo_total: -910977.17
-            };
-            
-            updateFinancialHeader(fallbackData);
-            showNotification('Dados carregados em modo offline', 'warning');
-        }
-    });
-}
-
-function updateFinancialHeader(data) {
-    console.log('🔄 Atualizando Smart Financial Header com dados:', data);
-    
-    // Atualizar Smart Financial Header KPIs
-    const entradas = data.receitas_mes || 0;
-    const saidas = data.despesas_mes || 0;
-    const totalTransacoes = data.total_transacoes || 0;
-    
-    $('#filteredEntradas').text(formatCurrency(entradas));
-    $('#filteredSaidas').text(formatCurrency(saidas));
-    
-    // Calcular proporção aproximada (sem dados específicos, usar estimativa)
-    const estimatedReceitas = Math.round(totalTransacoes * 0.3); // 30% receitas
-    const estimatedDespesas = Math.round(totalTransacoes * 0.7); // 70% despesas
-    
-    $('#countEntradas').text(`${estimatedReceitas} receitas`);
-    $('#countSaidas').text(`${estimatedDespesas} despesas`);
-    
-    const saldo = entradas - saidas;
-    $('#filteredSaldo').text(formatCurrency(saldo));
-    
-    // Calcular valor médio simples
-    const valorMedio = totalTransacoes > 0 ? (entradas + saidas) / totalTransacoes : 0;
-    $('#filteredMedia').text(formatCurrency(valorMedio));
-    $('#totalFiltered').text(`${totalTransacoes} transações`);
-    
-    // Atualizar período
-    $('#filteredPeriod').text('Período: Todos os dados');
-    
-    // Aplicar cores dinâmicas
-    const saldoElement = $('#filteredSaldo');
-    saldoElement.removeClass('text-success text-danger text-warning')
-        .addClass(saldo > 0 ? 'text-success' : saldo < 0 ? 'text-danger' : 'text-warning');
-        
-    console.log('✅ Smart Financial Header atualizado');
-}
-
-
-function loadTransacoes() {
-    console.log('📋 Carregando transações...');
-    
-    showLoading();
-    
-    const params = new URLSearchParams({
-        page: currentPage,
-        per_page: 20,
-        view_type: currentViewType,
-        ...currentFilters
-    });
-    
-    $.ajax({
-        url: `/api/transacoes?${params}`,
-        method: 'GET',
-        success: function(response) {
-            console.log('✅ Transações carregadas:', response);
-            allTransacoes = response.transacoes || [];
-            updateResultInfo(response);
-            renderCurrentView();
-            updatePagination(response);
-            hideLoading();
-        },
-        error: function(xhr, status, error) {
-            console.error('❌ Erro ao carregar transações:', error);
-            showNotification('Erro ao carregar transações', 'error');
-            hideLoading();
-        }
-    });
-}
-
-function loadEmpresas() {
-    $.get('/api/empresas', function(data) {
-        const select = $('#empresaFilter, #empresa_id');
-        select.find('option:not(:first)').remove();
-        
-        data.forEach(empresa => {
-            select.append(`<option value="${empresa.id}">${empresa.nome}</option>`);
-        });
-    });
-}
-
-function loadCentrosCusto() {
-    $.get('/api/centros_custo', function(data) {
-        const select = $('#centroCustoFilter, #centro_custo_id');
-        select.find('option:not(:first)').remove();
-        
-        data.forEach(centro => {
-            select.append(`<option value="${centro.id}">${centro.mascara_cc}</option>`);
-        });
-    });
-}
-
-function loadPlanosFinanceiros() {
-    $.get('/api/planos_financeiros', function(data) {
-        const select = $('#planoFinanceiroFilter, #plano_financeiro_id');
-        select.find('option:not(:first)').remove();
-        
-        data.forEach(plano => {
-            const nivel = '&nbsp;'.repeat((plano.grau - 1) * 4);
-            select.append(`<option value="${plano.id}">${nivel}${plano.codigo} - ${plano.nome}</option>`);
-        });
-    });
-}
-
-function loadFornecedores() {
-    $.get('/api/fornecedores?per_page=1000', function(response) {
-        const select = $('#cliente_fornecedor_id');
-        select.find('option:not(:first)').remove();
-        
-        response.fornecedores.forEach(fornecedor => {
-            select.append(`<option value="${fornecedor.id}">${fornecedor.nome}</option>`);
-        });
-    });
-}
-
-function loadContasBancarias() {
-    $.get('/api/contas_bancarias', function(response) {
-        const select = $('#conta_bancaria_id');
-        select.find('option:not(:first)').remove();
-        
-        response.contas.forEach(conta => {
-            const label = `${conta.banco} - Ag: ${conta.agencia} - Conta: ${conta.conta}`;
-            select.append(`<option value="${conta.id}">${label}</option>`);
-        });
-    });
-}
-
-// ==================================
-// RENDERIZAÇÃO DE VIEWS
-// ==================================
-
-function renderTableView() {
-    console.log('🗂️ Renderizando view tabela...');
-    
-    const tbody = $('#transacoesTableBody');
-    tbody.empty();
-    
-    if (allTransacoes.length === 0) {
-        showEmptyState();
+    if (!nivel) {
+        // Mostrar todos os planos
+        popularPlanosFinanceiros();
         return;
     }
     
-    allTransacoes.forEach(transacao => {
-        const row = createTableRow(transacao);
-        tbody.append(row);
-    });
+    const planos = TransacoesApp.state.filtrosDisponiveis.entidades.plano_financeiro.por_nivel[nivel];
     
-    hideEmptyState();
+    select.innerHTML = '<option value="">Todos os planos</option>';
+    
+    if (planos && planos.length > 1) {
+        planos.slice(1).forEach(plano => { // Pula o primeiro "Todos"
+            const option = document.createElement('option');
+            option.value = plano.value;
+            option.textContent = plano.label;
+            select.appendChild(option);
+        });
+    }
 }
 
-function createTableRow(transacao) {
-    const statusClass = getStatusClass(transacao);
-    const tipoClass = transacao.tipo.toLowerCase();
-    const valorClass = transacao.tipo === 'Receita' ? 'receita' : 'despesa';
+// ==========================================
+// CARREGAMENTO DE DADOS
+// ==========================================
+
+async function carregarDados() {
+    if (TransacoesApp.state.loading) {
+        console.log('⏳ Carregamento já em andamento...');
+        return;
+    }
     
-    return $(`
-        <tr data-id="${transacao.id}">
+    try {
+        TransacoesApp.state.loading = true;
+        showLoading(true);
+        
+        const payload = {
+            filtros: TransacoesApp.state.filtros,
+            page: TransacoesApp.state.page,
+            per_page: TransacoesApp.state.per_page,
+            sort_by: TransacoesApp.state.sortBy,
+            sort_direction: TransacoesApp.state.sortDirection
+        };
+        
+        console.log('📤 ENVIANDO REQUISIÇÃO COMPLETA:', payload);
+        console.log('🔍 FILTROS DE DATA ESPECÍFICOS:', {
+            data_inicio: payload.filtros.data_inicio,
+            data_fim: payload.filtros.data_fim,
+            periodo: payload.filtros.periodo
+        });
+        
+        const response = await fetch('/api/transacoes/buscar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const dados = await response.json();
+        
+        console.log('📥 Dados recebidos:', dados);
+        
+        // Atualizar estado
+        TransacoesApp.state.transacoes = dados.transacoes;
+        TransacoesApp.state.kpis = dados.kpis;
+        TransacoesApp.state.total = dados.total;
+        TransacoesApp.cache.ultimaConsulta = new Date();
+        
+        // Atualizar interface
+        atualizarKPIs();
+        atualizarStatusInfo();
+        renderizarTransacoes();
+        renderizarPaginacao();
+        
+        // Verificar se não há dados
+        if (dados.transacoes.length === 0) {
+            mostrarEstadoVazio();
+        } else {
+            esconderEstadoVazio();
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar dados:', error);
+        showError('Erro ao carregar transações: ' + error.message);
+    } finally {
+        TransacoesApp.state.loading = false;
+        showLoading(false);
+    }
+}
+
+// ==========================================
+// ATUALIZAÇÃO DE INTERFACE
+// ==========================================
+
+function atualizarKPIs() {
+    const kpis = TransacoesApp.state.kpis;
+    
+    // Atualizar valores
+    document.getElementById('kpiReceitas').textContent = formatCurrency(kpis.receitas || 0);
+    document.getElementById('kpiDespesas').textContent = formatCurrency(kpis.despesas || 0);
+    document.getElementById('kpiSaldo').textContent = formatCurrency(kpis.saldo || 0);
+    document.getElementById('kpiTotal').textContent = (kpis.total_transacoes || 0).toLocaleString();
+    
+    // Atualizar contadores
+    document.getElementById('countReceitas').textContent = `${kpis.count_receitas || 0} transações`;
+    document.getElementById('countDespesas').textContent = `${kpis.count_despesas || 0} transações`;
+    document.getElementById('kpiMedia').textContent = `Média: ${formatCurrency(kpis.valor_medio || 0)}`;
+    
+    // Atualizar período
+    const periodoTexto = obterTextoPeriodo();
+    document.getElementById('kpiPeriodo').textContent = periodoTexto;
+    
+    // Colorir saldo
+    const saldoElement = document.getElementById('kpiSaldo');
+    saldoElement.style.color = (kpis.saldo || 0) >= 0 ? '#2e7d32' : '#d32f2f';
+    
+    console.log('✅ KPIs atualizados');
+}
+
+function obterTextoPeriodo() {
+    const filtros = TransacoesApp.state.filtros;
+    const kpis = TransacoesApp.state.kpis;
+    
+    // PRIORIDADE 1: Período personalizado via datas
+    if (filtros.data_inicio && filtros.data_fim) {
+        return `📅 ${formatDate(filtros.data_inicio)} - ${formatDate(filtros.data_fim)}`;
+    }
+    if (filtros.data_inicio && !filtros.data_fim) {
+        return `📅 A partir de ${formatDate(filtros.data_inicio)}`;
+    }
+    if (!filtros.data_inicio && filtros.data_fim) {
+        return `📅 Até ${formatDate(filtros.data_fim)}`;
+    }
+    
+    // PRIORIDADE 2: Períodos predefinidos
+    if (filtros.periodo === 'mes_atual') return 'Este mês';
+    if (filtros.periodo === 'ano_atual') return 'Este ano';
+    if (filtros.periodo === 'ultimos_3_meses') return 'Últimos 3 meses';
+    
+    // PRIORIDADE 3: Dados do backend (quando disponível)
+    if (kpis.periodo_dados && kpis.periodo_dados.inicio && kpis.periodo_dados.fim) {
+        return `${formatDate(kpis.periodo_dados.inicio)} - ${formatDate(kpis.periodo_dados.fim)}`;
+    }
+    
+    return 'Todos os períodos';
+}
+
+function atualizarStatusInfo() {
+    const state = TransacoesApp.state;
+    
+    const inicio = (state.page - 1) * state.per_page + 1;
+    const fim = Math.min(state.page * state.per_page, state.total);
+    const totalPages = Math.ceil(state.total / state.per_page);
+    
+    document.getElementById('results-showing').textContent = `${inicio}-${fim}`;
+    document.getElementById('results-total').textContent = state.total.toLocaleString();
+    document.getElementById('results-page').textContent = state.page;
+    document.getElementById('results-pages').textContent = totalPages;
+    
+    // Mostrar/esconder elementos
+    document.getElementById('loading-status').style.display = 'none';
+    document.getElementById('results-info').style.display = 'block';
+}
+
+// ==========================================
+// RENDERIZAÇÃO DE TRANSAÇÕES
+// ==========================================
+
+function renderizarTransacoes() {
+    const view = TransacoesApp.state.view;
+    
+    switch (view) {
+        case 'table':
+            renderizarTabelaView();
+            break;
+        case 'cards':
+            renderizarCardsView();
+            break;
+        case 'timeline':
+            renderizarTimelineView();
+            break;
+        default:
+            renderizarTabelaView();
+    }
+}
+
+function renderizarTabelaView() {
+    const tbody = document.getElementById('transacoes-table-body');
+    const transacoes = TransacoesApp.state.transacoes;
+    
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    transacoes.forEach(transacao => {
+        const row = document.createElement('tr');
+        
+        row.innerHTML = `
             <td>
-                <div class="status-badges">
-                    <span class="status-badge ${statusClass}">${transacao.status_dinamico}</span>
-                    <span class="status-badge ${transacao.status_negociacao.toLowerCase().replace(/[^a-z]/g, '-').replace(/--+/g, '-')}">${transacao.status_negociacao}</span>
-                </div>
+                <input type="checkbox" class="transacao-checkbox" value="${transacao.id}">
             </td>
             <td>
-                <div class="titulo-info">
-                    <strong>${transacao.titulo}</strong>
-                    ${transacao.numero_documento ? `<br><small>Doc: ${transacao.numero_documento}</small>` : ''}
-                </div>
+                <strong>${escapeHtml(transacao.titulo || '')}</strong>
+                ${transacao.parcela_total > 1 ? `<br><small>Parcela ${transacao.parcela_atual}/${transacao.parcela_total}</small>` : ''}
             </td>
             <td>
-                <span class="tipo-badge ${tipoClass}">${transacao.tipo}</span>
+                <span class="tipo-badge tipo-${transacao.tipo.toLowerCase()}">${transacao.tipo}</span>
             </td>
-            <td class="valor-cell ${valorClass}">
+            <td class="valor-${transacao.tipo.toLowerCase()}">
                 ${formatCurrency(transacao.valor)}
             </td>
-            <td class="text-center">
-                ${transacao.parcela}/${transacao.parcela_total}
+            <td>
+                ${formatDate(transacao.data_vencimento)}
+                ${transacao.data_vencimento !== transacao.data_lancamento ? `<br><small>Lanç: ${formatDate(transacao.data_lancamento)}</small>` : ''}
             </td>
             <td>
-                ${formatDate(transacao.data_vencimento, true)}
-                ${isVencida(transacao.data_vencimento) ? '<br><small class="text-danger">Vencida</small>' : ''}
+                <span class="status-badge status-${transacao.status_pagamento.toLowerCase().replace('ç', 'c')}">${transacao.status_pagamento}</span>
             </td>
             <td>
-                <small>${transacao.fornecedor_nome || 'N/A'}</small>
+                <span title="${escapeHtml(transacao.fornecedor_nome || 'N/A')}">${truncateText(transacao.fornecedor_nome || 'N/A', 25)}</span>
+                ${transacao.fornecedor_tipo ? `<br><small>${transacao.fornecedor_tipo}</small>` : ''}
             </td>
             <td>
-                <small>${transacao.centro_custo_nome || 'N/A'}</small>
+                <span title="${escapeHtml(transacao.centro_custo_nome || 'N/A')}">${truncateText(transacao.centro_custo_nome || 'N/A', 20)}</span>
+                ${transacao.centro_custo_tipologia ? `<br><small>${transacao.centro_custo_tipologia}</small>` : ''}
             </td>
             <td>
                 <div class="action-buttons">
-                    <button class="btn btn-sm btn-primary" onclick="editTransacao(${transacao.id})" title="Editar">
+                    <button class="btn-icon" onclick="editarTransacao(${transacao.id})" title="Editar">
                         <i class="fas fa-edit"></i>
                     </button>
-                    ${transacao.status_pagamento === 'Á realizar' ? 
-                        `<button class="btn btn-sm btn-success" onclick="showBaixaModal(${transacao.id})" title="Efetuar Baixa">
-                            <i class="fas fa-check"></i>
-                        </button>` : ''
-                    }
-                    <button class="btn btn-sm btn-danger" onclick="deleteTransacao(${transacao.id})" title="Excluir">
+                    <button class="btn-icon" onclick="excluirTransacao(${transacao.id})" title="Excluir">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
             </td>
-        </tr>
-    `);
-}
-
-function renderCardsView() {
-    console.log('🃏 Renderizando view cards...');
-    
-    const container = $('#transacoesCards');
-    container.empty();
-    
-    if (allTransacoes.length === 0) {
-        showEmptyState();
-        return;
-    }
-    
-    allTransacoes.forEach(transacao => {
-        const card = createTransacaoCard(transacao);
-        container.append(card);
+        `;
+        
+        tbody.appendChild(row);
     });
     
-    hideEmptyState();
+    console.log(`✅ Tabela renderizada: ${transacoes.length} transações`);
 }
 
-function createTransacaoCard(transacao) {
-    const statusClass = getStatusClass(transacao);
-    const tipoClass = transacao.tipo.toLowerCase();
-    const isVencidaFlag = isVencida(transacao.data_vencimento);
+function renderizarCardsView() {
+    const container = document.getElementById('transacoes-cards');
+    const transacoes = TransacoesApp.state.transacoes;
     
-    return $(`
-        <div class="transacao-card ${tipoClass} ${isVencidaFlag ? 'vencida' : ''}" data-id="${transacao.id}">
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    transacoes.forEach(transacao => {
+        const card = document.createElement('div');
+        card.className = 'transacao-card';
+        
+        card.innerHTML = `
             <div class="card-header">
-                <h3 class="card-title">${transacao.titulo}</h3>
-                <div class="card-badges">
-                    <span class="status-badge ${statusClass}">${transacao.status_dinamico}</span>
-                    <span class="tipo-badge ${tipoClass}">${transacao.tipo}</span>
-                </div>
+                <h4>${escapeHtml(transacao.titulo || '')}</h4>
+                <span class="tipo-badge tipo-${transacao.tipo.toLowerCase()}">${transacao.tipo}</span>
             </div>
-            
-            <div class="card-content">
-                <div class="card-field">
-                    <div class="card-field-label">Vencimento</div>
-                    <div class="card-field-value">${formatDate(transacao.data_vencimento, true)}</div>
+            <div class="card-body">
+                <div class="card-row">
+                    <span class="label">Valor:</span>
+                    <span class="valor-${transacao.tipo.toLowerCase()}">${formatCurrency(transacao.valor)}</span>
                 </div>
-                
-                <div class="card-field">
-                    <div class="card-field-label">Parcela</div>
-                    <div class="card-field-value">${transacao.parcela}/${transacao.parcela_total}</div>
+                <div class="card-row">
+                    <span class="label">Vencimento:</span>
+                    <span>${formatDate(transacao.data_vencimento)}</span>
                 </div>
-                
-                <div class="card-field">
-                    <div class="card-field-label">Fornecedor</div>
-                    <div class="card-field-value">${truncateText(transacao.fornecedor_nome || 'N/A', 25)}</div>
+                <div class="card-row">
+                    <span class="label">Status:</span>
+                    <span class="status-badge status-${transacao.status_pagamento.toLowerCase().replace('ç', 'c')}">${transacao.status_pagamento}</span>
                 </div>
-                
-                <div class="card-field">
-                    <div class="card-field-label">Centro Custo</div>
-                    <div class="card-field-value">${truncateText(transacao.centro_custo_nome || 'N/A', 25)}</div>
+                <div class="card-row">
+                    <span class="label">Fornecedor:</span>
+                    <span>${escapeHtml(transacao.fornecedor_nome || 'N/A')}</span>
                 </div>
-                
-                <div class="card-valor ${tipoClass}">
-                    <div class="card-valor-label">Valor</div>
-                    <div class="card-valor-value">${formatCurrency(transacao.valor)}</div>
+                ${transacao.parcela_total > 1 ? `
+                <div class="card-row">
+                    <span class="label">Parcela:</span>
+                    <span>${transacao.parcela_atual}/${transacao.parcela_total}</span>
                 </div>
+                ` : ''}
             </div>
-            
             <div class="card-actions">
-                <button class="card-action-btn secondary" onclick="editTransacao(${transacao.id})">
+                <button class="btn btn-secondary" onclick="editarTransacao(${transacao.id})">
                     <i class="fas fa-edit"></i> Editar
                 </button>
-                
-                ${transacao.status_pagamento === 'Á realizar' ? 
-                    `<button class="card-action-btn success" onclick="showBaixaModal(${transacao.id})">
-                        <i class="fas fa-check"></i> Baixa
-                    </button>` : 
-                    `<button class="card-action-btn primary" onclick="viewTransacao(${transacao.id})">
-                        <i class="fas fa-eye"></i> Ver
-                    </button>`
-                }
-            </div>
-        </div>
-    `);
-}
-
-function renderTimelineView() {
-    console.log('📅 Renderizando view timeline...');
-    
-    const container = $('#timelineContainer');
-    container.empty();
-    
-    if (allTransacoes.length === 0) {
-        showEmptyState();
-        return;
-    }
-    
-    // Agrupar por data
-    const grouped = groupByDate(allTransacoes);
-    
-    Object.keys(grouped).sort().forEach(date => {
-        const group = createTimelineGroup(date, grouped[date]);
-        container.append(group);
-    });
-    
-    hideEmptyState();
-}
-
-function createTimelineGroup(date, transacoes) {
-    const dateFormatted = formatDate(date, true);
-    const totalValue = transacoes.reduce((sum, t) => sum + (t.tipo === 'Receita' ? t.valor : -t.valor), 0);
-    
-    const items = transacoes.map(transacao => createTimelineItem(transacao)).join('');
-    
-    return $(`
-        <div class="timeline-group">
-            <div class="timeline-date">
-                ${dateFormatted}
-                <span class="timeline-total ${totalValue >= 0 ? 'receita' : 'despesa'}">
-                    ${formatCurrency(Math.abs(totalValue))}
-                </span>
-            </div>
-            <div class="timeline-items">
-                ${items}
-            </div>
-        </div>
-    `);
-}
-
-function createTimelineItem(transacao) {
-    const tipoClass = transacao.tipo.toLowerCase();
-    
-    return `
-        <div class="timeline-item ${tipoClass}" data-id="${transacao.id}">
-            <div class="timeline-content">
-                <div class="timeline-info">
-                    <h4>${transacao.titulo}</h4>
-                    <p>${transacao.fornecedor_nome || 'N/A'} • Parcela ${transacao.parcela}/${transacao.parcela_total}</p>
-                </div>
-                <div class="timeline-value ${tipoClass}">
-                    ${formatCurrency(transacao.valor)}
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function renderParcelasView() {
-    console.log('📦 Renderizando view parcelas...');
-    
-    const container = $('#parcelasContainer');
-    container.empty();
-    
-    if (allTransacoes.length === 0) {
-        showEmptyState();
-        return;
-    }
-    
-    // Agrupar por número do documento ou título base
-    const grouped = groupByDocument(allTransacoes);
-    
-    Object.keys(grouped).forEach(docKey => {
-        const group = createParcelaGroup(docKey, grouped[docKey]);
-        container.append(group);
-    });
-    
-    hideEmptyState();
-}
-
-function createParcelaGroup(docKey, transacoes) {
-    const totalValue = transacoes.reduce((sum, t) => sum + t.valor, 0);
-    const pagas = transacoes.filter(t => t.status_pagamento === 'Realizado').length;
-    
-    const parcelas = transacoes.map(transacao => createParcelaItem(transacao)).join('');
-    
-    return $(`
-        <div class="parcela-group">
-            <div class="parcela-group-header" onclick="toggleParcelaGroup(this)">
-                <h3 class="parcela-group-title">${docKey}</h3>
-                <div class="parcela-group-info">
-                    <span>${transacoes.length} parcelas</span>
-                    <span>${pagas}/${transacoes.length} pagas</span>
-                    <span>${formatCurrency(totalValue)}</span>
-                    <i class="fas fa-chevron-down"></i>
-                </div>
-            </div>
-            <div class="parcela-group-content">
-                <div class="parcelas-list">
-                    ${parcelas}
-                </div>
-            </div>
-        </div>
-    `);
-}
-
-function createParcelaItem(transacao) {
-    const statusClass = getStatusClass(transacao);
-    
-    return `
-        <div class="parcela-item" data-id="${transacao.id}">
-            <div class="parcela-header">
-                <span class="parcela-numero">${transacao.parcela}/${transacao.parcela_total}</span>
-                <span class="parcela-valor">${formatCurrency(transacao.valor)}</span>
-            </div>
-            <div class="parcela-info">
-                <span>${formatDate(transacao.data_vencimento, true)}</span>
-                <span class="status-badge ${statusClass}">${transacao.status_dinamico}</span>
-            </div>
-        </div>
-    `;
-}
-
-// ==================================
-// FILTROS E BUSCA
-// ==================================
-
-function applyFilters() {
-    console.log('🔍 Aplicando filtros...');
-    
-    currentFilters = {
-        search: $('#searchInput').val(),
-        tipo: $('#tipoFilter').val(),
-        status_pagamento: $('#statusPagamentoFilter').val(),
-        status_negociacao: $('#statusNegociacaoFilter').val(),
-        empresa_id: $('#empresaFilter').val(),
-        centro_custo_id: $('#centroCustoFilter').val(),
-        plano_financeiro_id: $('#planoFinanceiroFilter').val(),
-        data_vencimento_inicio: $('#dataVencimentoInicio').val(),
-        data_vencimento_fim: $('#dataVencimentoFim').val(),
-        sort: $('#sortBy').val()
-    };
-    
-    // Remover valores vazios
-    Object.keys(currentFilters).forEach(key => {
-        if (!currentFilters[key]) {
-            delete currentFilters[key];
-        }
-    });
-    
-    currentPage = 1;
-    loadTransacoes();
-}
-
-function applyQuickFilter(filter) {
-    console.log(`⚡ Aplicando filtro rápido: ${filter}`);
-    
-    // Remove active class from all quick filter buttons
-    $('.quick-filter-btn').removeClass('active');
-    
-    const hoje = new Date();
-    let dataInicio, dataFim;
-    
-    switch(filter) {
-        case 'vencidas':
-            dataFim = formatDate(hoje);
-            $('#statusPagamentoFilter').val('Á realizar');
-            break;
-            
-        case 'vencer-hoje':
-            dataInicio = dataFim = formatDate(hoje);
-            $('#statusPagamentoFilter').val('Á realizar');
-            break;
-            
-        case 'vencer-semana':
-            dataInicio = formatDate(hoje);
-            const fimSemana = new Date(hoje);
-            fimSemana.setDate(hoje.getDate() + 7);
-            dataFim = formatDate(fimSemana);
-            $('#statusPagamentoFilter').val('Á realizar');
-            break;
-            
-        case 'mes-atual':
-            const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-            const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-            dataInicio = formatDate(inicioMes);
-            dataFim = formatDate(fimMes);
-            break;
-    }
-    
-    if (dataInicio) $('#dataVencimentoInicio').val(dataInicio);
-    if (dataFim) $('#dataVencimentoFim').val(dataFim);
-    
-    // Mark button as active
-    $(`.quick-filter-btn[data-filter="${filter}"]`).addClass('active');
-    
-    applyFilters();
-}
-
-function clearFilters() {
-    console.log('🧹 Limpando filtros...');
-    
-    $('#searchInput').val('');
-    $('.filter-select').val('');
-    $('.date-input').val('');
-    $('.quick-filter-btn').removeClass('active');
-    
-    const hoje = new Date();
-    const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-    const ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-    
-    $('#dataVencimentoInicio').val(formatDate(primeiroDiaMes));
-    $('#dataVencimentoFim').val(formatDate(ultimoDiaMes));
-    
-    currentFilters = {};
-    currentPage = 1;
-    loadTransacoes();
-}
-
-// ==================================
-// CRUD OPERATIONS
-// ==================================
-
-function novaTransacao(tipo = null, parcelada = false) {
-    console.log(`➕ Nova transação: tipo=${tipo}, parcelada=${parcelada}`);
-    
-    resetForm('#form-transacao');
-    $('#transacao_id').val('');
-    $('#modal-title').text('Nova Transação');
-    
-    if (tipo) {
-        $('#tipo').val(tipo);
-    }
-    
-    if (parcelada) {
-        $('#parcelamento_ativo').prop('checked', true);
-        toggleParcelamento(true);
-    }
-    
-    showModal('#modal-transacao');
-}
-
-function editTransacao(id) {
-    console.log(`✏️ Editando transação: ${id}`);
-    
-    const transacao = allTransacoes.find(t => t.id === id);
-    if (!transacao) {
-        showNotification('Transação não encontrada', 'error');
-        return;
-    }
-    
-    // Preencher formulário
-    $('#transacao_id').val(transacao.id);
-    $('#titulo').val(transacao.titulo);
-    $('#tipo').val(transacao.tipo);
-    $('#valor').val(transacao.valor);
-    $('#data_vencimento').val(transacao.data_vencimento);
-    $('#cliente_fornecedor_id').val(transacao.cliente_fornecedor_id);
-    $('#empresa_id').val(transacao.empresa_id);
-    $('#centro_custo_id').val(transacao.centro_custo_id);
-    $('#plano_financeiro_id').val(transacao.plano_financeiro_id);
-    $('#status_negociacao').val(transacao.status_negociacao);
-    $('#status_pagamento').val(transacao.status_pagamento);
-    $('#observacao').val(transacao.observacao);
-    
-    // Configurar parcelamento se necessário
-    if (transacao.parcela_total > 1) {
-        $('#parcelamento_ativo').prop('checked', true);
-        $('#parcela_total').val(transacao.parcela_total);
-        toggleParcelamento(true);
-    }
-    
-    $('#modal-title').text('Editar Transação');
-    showModal('#modal-transacao');
-}
-
-function saveTransacao() {
-    console.log('💾 Salvando transação...');
-    
-    const formData = getFormData('#form-transacao');
-    const isEdit = !!formData.transacao_id;
-    
-    // Validar dados
-    if (!validateTransacaoForm(formData)) {
-        return;
-    }
-    
-    const url = isEdit ? `/api/transacoes/${formData.transacao_id}` : '/api/transacoes';
-    const method = isEdit ? 'PUT' : 'POST';
-    
-    $.ajax({
-        url: url,
-        method: method,
-        data: JSON.stringify(formData),
-        contentType: 'application/json',
-        success: function(response) {
-            console.log('✅ Transação salva:', response);
-            showNotification(response.message || 'Transação salva com sucesso!', 'success');
-            closeModal('#modal-transacao');
-            loadTransacoes();
-            loadFinancialKPIs();
-        },
-        error: function(xhr, status, error) {
-            console.error('❌ Erro ao salvar transação:', xhr.responseJSON);
-            const message = xhr.responseJSON?.error || 'Erro ao salvar transação';
-            showNotification(message, 'error');
-        }
-    });
-}
-
-function deleteTransacao(id) {
-    if (!confirm('Tem certeza que deseja excluir esta transação?')) {
-        return;
-    }
-    
-    console.log(`🗑️ Excluindo transação: ${id}`);
-    
-    $.ajax({
-        url: `/api/transacoes/${id}`,
-        method: 'DELETE',
-        success: function(response) {
-            console.log('✅ Transação excluída:', response);
-            showNotification('Transação excluída com sucesso!', 'success');
-            loadTransacoes();
-            loadFinancialKPIs();
-        },
-        error: function(xhr, status, error) {
-            console.error('❌ Erro ao excluir transação:', error);
-            showNotification('Erro ao excluir transação', 'error');
-        }
-    });
-}
-
-// ==================================
-// BAIXA/LIQUIDAÇÃO
-// ==================================
-
-function showBaixaModal(id) {
-    console.log(`💰 Abrindo modal de baixa: ${id}`);
-    
-    const transacao = allTransacoes.find(t => t.id === id);
-    if (!transacao) {
-        showNotification('Transação não encontrada', 'error');
-        return;
-    }
-    
-    // Preencher informações da transação
-    $('#baixa_transacao_id').val(id);
-    $('#valor_pago').val(transacao.valor);
-    
-    const transacaoInfo = `
-        <h4>${transacao.titulo}</h4>
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Tipo</div>
-                <div class="info-value">${transacao.tipo}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Valor Original</div>
-                <div class="info-value">${formatCurrency(transacao.valor)}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Vencimento</div>
-                <div class="info-value">${formatDate(transacao.data_vencimento, true)}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Fornecedor</div>
-                <div class="info-value">${transacao.fornecedor_nome || 'N/A'}</div>
-            </div>
-        </div>
-    `;
-    
-    $('#transacao-info').html(transacaoInfo);
-    showModal('#modal-baixa');
-}
-
-function efetuarBaixa() {
-    console.log('💳 Efetuando baixa...');
-    
-    const formData = getFormData('#form-baixa');
-    
-    // Validar dados
-    if (!validateBaixaForm(formData)) {
-        return;
-    }
-    
-    $.ajax({
-        url: `/api/transacoes/${formData.transacao_id}/baixa`,
-        method: 'POST',
-        data: JSON.stringify(formData),
-        contentType: 'application/json',
-        success: function(response) {
-            console.log('✅ Baixa efetuada:', response);
-            showNotification('Baixa efetuada com sucesso!', 'success');
-            closeModal('#modal-baixa');
-            loadTransacoes();
-            loadFinancialKPIs();
-        },
-        error: function(xhr, status, error) {
-            console.error('❌ Erro ao efetuar baixa:', xhr.responseJSON);
-            const message = xhr.responseJSON?.error || 'Erro ao efetuar baixa';
-            showNotification(message, 'error');
-        }
-    });
-}
-
-// ==================================
-// PARCELAMENTO
-// ==================================
-
-function toggleParcelamento(ativo) {
-    console.log(`🔄 Toggle parcelamento: ${ativo}`);
-    
-    if (ativo) {
-        $('#parcelas-config').slideDown();
-        $('#btn-preview').show();
-        updatePreviewParcelas();
-    } else {
-        $('#parcelas-config').slideUp();
-        $('#btn-preview').hide();
-        $('#preview-parcelas').empty();
-    }
-}
-
-function updatePreviewParcelas() {
-    const valor = parseFloat($('#valor').val()) || 0;
-    const parcelas = parseInt($('#parcela_total').val()) || 1;
-    const intervalo = parseInt($('#intervalo_dias').val()) || 30;
-    const dataInicial = $('#data_vencimento').val();
-    
-    if (!valor || !dataInicial) {
-        $('#preview-parcelas').empty();
-        return;
-    }
-    
-    console.log('🔍 Atualizando preview de parcelas...');
-    
-    $.ajax({
-        url: '/api/transacoes/parcelas/preview',
-        method: 'POST',
-        data: JSON.stringify({
-            valor: valor,
-            parcela_total: parcelas,
-            data_vencimento: dataInicial,
-            intervalo_dias: intervalo
-        }),
-        contentType: 'application/json',
-        success: function(response) {
-            renderPreviewParcelas(response);
-        },
-        error: function(xhr, status, error) {
-            console.error('❌ Erro no preview:', error);
-        }
-    });
-}
-
-function renderPreviewParcelas(data) {
-    const container = $('#preview-parcelas');
-    
-    let html = `
-        <div class="preview-title">
-            Preview: ${data.quantidade} parcelas de ${formatCurrency(data.valor_total / data.quantidade)}
-        </div>
-        <div class="preview-list">
-    `;
-    
-    data.parcelas.forEach(parcela => {
-        html += `
-            <div class="preview-item">
-                <strong>${parcela.parcela}/${data.quantidade}</strong>
-                ${formatCurrency(parcela.valor)}
-                <small>${formatDate(parcela.data_vencimento, true)}</small>
+                <button class="btn btn-secondary" onclick="excluirTransacao(${transacao.id})">
+                    <i class="fas fa-trash"></i> Excluir
+                </button>
             </div>
         `;
+        
+        container.appendChild(card);
     });
     
-    html += '</div>';
-    container.html(html);
+    console.log(`✅ Cards renderizados: ${transacoes.length} transações`);
 }
 
-function showPreviewParcelas() {
-    updatePreviewParcelas();
-    // Scroll para o preview
-    $('#preview-parcelas')[0].scrollIntoView({ behavior: 'smooth' });
-}
-
-// ==================================
-// HELPERS E UTILITÁRIOS
-// ==================================
-
-function getStatusClass(transacao) {
-    if (transacao.status_pagamento === 'Realizado') {
-        return 'realizado';
-    }
+function renderizarTimelineView() {
+    const container = document.getElementById('transacoes-timeline');
+    const transacoes = TransacoesApp.state.transacoes;
     
-    if (isVencida(transacao.data_vencimento)) {
-        return 'vencida';
-    }
+    if (!container) return;
     
-    return 'a-realizar';
-}
-
-function isVencida(dataVencimento) {
-    const hoje = new Date();
-    const vencimento = new Date(dataVencimento);
-    return vencimento < hoje;
-}
-
-function groupByDate(transacoes) {
-    const grouped = {};
+    container.innerHTML = '';
     
+    // Agrupar por data
+    const transacoesPorData = {};
     transacoes.forEach(transacao => {
-        const date = transacao.data_vencimento;
-        if (!grouped[date]) {
-            grouped[date] = [];
+        const data = transacao.data_vencimento;
+        if (!transacoesPorData[data]) {
+            transacoesPorData[data] = [];
         }
-        grouped[date].push(transacao);
+        transacoesPorData[data].push(transacao);
     });
     
-    return grouped;
-}
-
-function groupByDocument(transacoes) {
-    const grouped = {};
-    
-    transacoes.forEach(transacao => {
-        const key = transacao.numero_documento || transacao.titulo;
-        if (!grouped[key]) {
-            grouped[key] = [];
-        }
-        grouped[key].push(transacao);
+    // Renderizar por data
+    Object.keys(transacoesPorData).sort().forEach(data => {
+        const timelineItem = document.createElement('div');
+        timelineItem.className = 'timeline-item';
+        
+        const transacoesData = transacoesPorData[data];
+        const totalData = transacoesData.reduce((acc, t) => acc + t.valor, 0);
+        
+        timelineItem.innerHTML = `
+            <div class="timeline-date">
+                <strong>${formatDate(data)}</strong>
+                <br><small>${transacoesData.length} transações</small>
+                <br><small>${formatCurrency(totalData)}</small>
+            </div>
+            <div class="timeline-content">
+                ${transacoesData.map(t => `
+                    <div class="timeline-transacao">
+                        <span class="tipo-badge tipo-${t.tipo.toLowerCase()}">${t.tipo}</span>
+                        <strong>${escapeHtml(t.titulo || '')}</strong>
+                        <span class="valor-${t.tipo.toLowerCase()}">${formatCurrency(t.valor)}</span>
+                        <br><small>${escapeHtml(t.fornecedor_nome || 'N/A')}</small>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        
+        container.appendChild(timelineItem);
     });
     
-    return grouped;
+    console.log(`✅ Timeline renderizada: ${Object.keys(transacoesPorData).length} datas`);
 }
 
-function toggleParcelaGroup(header) {
-    const group = $(header).closest('.parcela-group');
-    group.toggleClass('open');
+// ==========================================
+// PAGINAÇÃO
+// ==========================================
+
+function renderizarPaginacao() {
+    const container = document.getElementById('pagination');
+    const totalPages = Math.ceil(TransacoesApp.state.total / TransacoesApp.state.per_page);
+    const currentPage = TransacoesApp.state.page;
     
-    const icon = group.find('.fa-chevron-down');
-    icon.toggleClass('fa-chevron-up fa-chevron-down');
+    if (!container || totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    let html = '';
+    
+    // Botão anterior
+    html += `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="irParaPagina(${currentPage - 1})">
+        <i class="fas fa-chevron-left"></i> Anterior
+    </button>`;
+    
+    // Páginas numeradas
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, startPage + 4);
+    
+    if (startPage > 1) {
+        html += `<button class="page-btn" onclick="irParaPagina(1)">1</button>`;
+        if (startPage > 2) {
+            html += `<span class="page-ellipsis">...</span>`;
+        }
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="irParaPagina(${i})">${i}</button>`;
+    }
+    
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            html += `<span class="page-ellipsis">...</span>`;
+        }
+        html += `<button class="page-btn" onclick="irParaPagina(${totalPages})">${totalPages}</button>`;
+    }
+    
+    // Botão próximo
+    html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="irParaPagina(${currentPage + 1})">
+        Próximo <i class="fas fa-chevron-right"></i>
+    </button>`;
+    
+    container.innerHTML = html;
 }
 
-function validateTransacaoForm(data) {
-    if (!data.titulo) {
-        showNotification('Título é obrigatório', 'error');
-        return false;
+window.irParaPagina = function(page) {
+    if (page >= 1 && page <= Math.ceil(TransacoesApp.state.total / TransacoesApp.state.per_page)) {
+        TransacoesApp.state.page = page;
+        carregarDados();
     }
-    
-    if (!data.valor || data.valor <= 0) {
-        showNotification('Valor deve ser maior que zero', 'error');
-        return false;
-    }
-    
-    if (!data.tipo) {
-        showNotification('Tipo é obrigatório', 'error');
-        return false;
-    }
-    
-    if (!data.data_vencimento) {
-        showNotification('Data de vencimento é obrigatória', 'error');
-        return false;
-    }
-    
-    return true;
-}
+};
 
-function validateBaixaForm(data) {
-    if (!data.conta_bancaria_id) {
-        showNotification('Conta bancária é obrigatória', 'error');
-        return false;
-    }
-    
-    if (!data.data_pagamento) {
-        showNotification('Data do pagamento é obrigatória', 'error');
-        return false;
-    }
-    
-    if (!data.valor_pago || data.valor_pago <= 0) {
-        showNotification('Valor pago deve ser maior que zero', 'error');
-        return false;
-    }
-    
-    return true;
-}
+// ==========================================
+// UTILITÁRIOS
+// ==========================================
 
-function updateResultInfo(response) {
-    $('#resultCount').text(response.total || 0);
-    
-    const totalValue = allTransacoes.reduce((sum, t) => {
-        return sum + (t.tipo === 'Receita' ? t.valor : -t.valor);
-    }, 0);
-    
-    $('#totalValue').text(formatCurrency(Math.abs(totalValue)));
-    $('#totalValue').removeClass('text-success text-danger')
-        .addClass(totalValue >= 0 ? 'text-success' : 'text-danger');
-}
-
-function updatePagination(response) {
-    const container = $('#pagination');
-    container.empty();
-    
-    if (response.total_pages <= 1) return;
-    
-    const currentPage = response.page;
-    const totalPages = response.total_pages;
-    
-    // Previous button
-    if (currentPage > 1) {
-        container.append(`<button onclick="changePage(${currentPage - 1})">← Anterior</button>`);
-    }
-    
-    // Page numbers
-    for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
-        const active = i === currentPage ? 'active' : '';
-        container.append(`<button class="${active}" onclick="changePage(${i})">${i}</button>`);
-    }
-    
-    // Next button
-    if (currentPage < totalPages) {
-        container.append(`<button onclick="changePage(${currentPage + 1})">Próxima →</button>`);
-    }
-}
-
-function changePage(page) {
-    currentPage = page;
-    loadTransacoes();
-}
-
-function exportData() {
-    console.log('📤 Exportando dados...');
-    
-    const params = new URLSearchParams(currentFilters);
-    window.open(`/api/transacoes/export?${params}`, '_blank');
-}
-
-// Utility functions
 function formatCurrency(value) {
     return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
         currency: 'BRL'
-    }).format(value);
+    }).format(value || 0);
 }
 
-function formatDate(dateString, showDayName = false) {
-    if (!dateString) return '';
+function formatDate(dateString) {
+    if (!dateString) return '-';
     
-    const date = new Date(dateString);
-    const options = { 
-        year: 'numeric', 
-        month: '2-digit', 
-        day: '2-digit' 
-    };
-    
-    if (showDayName) {
-        options.weekday = 'short';
+    try {
+        const date = new Date(dateString + 'T00:00:00');
+        return date.toLocaleDateString('pt-BR');
+    } catch (error) {
+        return dateString;
     }
-    
-    return date.toLocaleDateString('pt-BR', options);
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function truncateText(text, maxLength) {
@@ -1163,733 +928,650 @@ function truncateText(text, maxLength) {
     return text.substring(0, maxLength) + '...';
 }
 
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-function getFormData(formSelector) {
-    const formData = {};
-    $(formSelector).find('input, select, textarea').each(function() {
-        const field = $(this);
-        const name = field.attr('name');
-        const value = field.val();
-        
-        if (name && value !== '') {
-            if (field.attr('type') === 'checkbox') {
-                formData[name] = field.is(':checked');
-            } else {
-                formData[name] = value;
-            }
-        }
-    });
-    return formData;
-}
-
-function resetForm(formSelector) {
-    $(formSelector)[0].reset();
-    $(formSelector).find('.is-invalid').removeClass('is-invalid');
-    $('#parcelas-config').hide();
-    $('#btn-preview').hide();
-    $('#preview-parcelas').empty();
-}
-
-function showModal(modalSelector) {
-    $(modalSelector).fadeIn(300);
-}
-
-function closeModal(modalSelector) {
-    $(modalSelector).fadeOut(300);
-}
-
-function showLoading() {
-    $('#loading').show();
-    $('.view-content').hide();
-}
-
-function hideLoading() {
-    $('#loading').hide();
-    $('.view-content.active').show();
-}
-
-function showEmptyState() {
-    $('#empty-state').show();
-}
-
-function hideEmptyState() {
-    $('#empty-state').hide();
-}
-
-function showNotification(message, type = 'info') {
-    const notification = $(`
-        <div class="notification ${type}">
-            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'}-circle"></i>
-            <span>${message}</span>
-        </div>
-    `);
+function showLoading(show) {
+    const overlay = document.getElementById('loading-overlay');
+    const status = document.getElementById('loading-status');
     
-    $('body').append(notification);
-    
-    setTimeout(() => {
-        notification.fadeOut(300, () => notification.remove());
-    }, 4000);
-}
-// ====================================
-// Smart Financial Header Functions
-// ====================================
-
-function initializeSmartFilters() {
-    console.log('🎯 Inicializando Smart Financial Header...');
-    
-    // Configurar datas padrão no Smart Header
-    const hoje = new Date();
-    $('#smartDataInicio').val('2023-01-01');
-    $('#smartDataFim').val('2024-12-31');
-    
-    // Event listeners para filtros inteligentes
-    setupSmartFilterEvents();
-    
-    // Carregar dados iniciais
-    updateSmartSummary();
-    
-    // Carregar contadores do view toggle
-    loadViewCounts();
-    
-    console.log('✅ Smart Financial Header inicializado');
-}
-
-function setupSmartFilterEvents() {
-    // Filtros de seleção
-    $('#smartTipoFilter, #smartStatusNegociacaoFilter, #smartStatusPagamentoFilter, #smartTipologiaFilter').on('change', function() {
-        updateSmartSummary();
-    });
-    
-    // Filtros de data
-    $('#smartDataInicio, #smartDataFim').on('change', function() {
-        updateSmartSummary();
-    });
-    
-    // Filtros de valor
-    $('#smartValorMin, #smartValorMax').on('input', debounce(function() {
-        updateSmartSummary();
-    }, 500));
-    
-    // Quick selectors de data
-    $('.date-preset-btn').on('click', function() {
-        const preset = $(this).data('preset');
-        setDatePreset(preset);
-        $('.date-preset-btn').removeClass('active');
-        $(this).addClass('active');
-    });
-}
-
-function setDatePeriod(period) {
-    const hoje = new Date();
-    let inicio, fim;
-    
-    switch(period) {
-        case 'mes-atual':
-            inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-            fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-            break;
-        case 'trimestre-atual':
-            const quarter = Math.floor(hoje.getMonth() / 3);
-            inicio = new Date(hoje.getFullYear(), quarter * 3, 1);
-            fim = new Date(hoje.getFullYear(), (quarter + 1) * 3, 0);
-            break;
-        case 'ano-atual':
-            inicio = new Date(hoje.getFullYear(), 0, 1);
-            fim = new Date(hoje.getFullYear(), 11, 31);
-            break;
-        case 'tudo':
-        default:
-            inicio = new Date('2023-01-01');
-            fim = new Date('2030-12-31');
-            break;
+    if (show) {
+        if (overlay) overlay.style.display = 'flex';
+        if (status) status.style.display = 'block';
+    } else {
+        if (overlay) overlay.style.display = 'none';
+        if (status) status.style.display = 'none';
     }
-    
-    $('#smartDataInicio').val(formatDate(inicio));
-    $('#smartDataFim').val(formatDate(fim));
-    updateSmartSummary();
 }
 
-function setValueRange(range) {
-    let min = '', max = '';
-    
-    switch(range) {
-        case 'pequeno':
-            min = '0';
-            max = '1000';
-            break;
-        case 'medio':
-            min = '1000';
-            max = '10000';
-            break;
-        case 'grande':
-            min = '10000';
-            max = '100000';
-            break;
-        case 'muito-grande':
-            min = '100000';
-            max = '';
-            break;
-        default:
-            min = '';
-            max = '';
-            break;
+function showError(message) {
+    console.error('Erro:', message);
+    // Implementar notificação de erro visual
+    alert('Erro: ' + message);
+}
+
+function mostrarEstadoVazio() {
+    document.getElementById('empty-state').style.display = 'block';
+    document.querySelector('.content-area').style.display = 'none';
+}
+
+function esconderEstadoVazio() {
+    document.getElementById('empty-state').style.display = 'none';
+    document.querySelector('.content-area').style.display = 'block';
+}
+
+// ==========================================
+// AÇÕES DE TRANSAÇÕES
+// ==========================================
+
+window.novaTransacao = function() {
+    console.log('🆕 Nova transação');
+    // Implementar modal de nova transação
+    alert('Funcionalidade de nova transação será implementada');
+};
+
+window.editarTransacao = function(id) {
+    console.log('✏️ Editar transação:', id);
+    // Implementar edição de transação
+    alert(`Editar transação ${id} - será implementado`);
+};
+
+window.excluirTransacao = function(id) {
+    console.log('🗑️ Excluir transação:', id);
+    if (confirm('Tem certeza que deseja excluir esta transação?')) {
+        // Implementar exclusão
+        alert(`Excluir transação ${id} - será implementado`);
     }
-    
-    $('#smartValorMin').val(min);
-    $('#smartValorMax').val(max);
-    updateSmartSummary();
-}
+};
 
-function updateSmartSummary() {
-    console.log('📊 Atualizando resumo inteligente...');
-    
-    // Coletar filtros ativos
-    const filters = getSmartFilters();
-    
-    // Fazer chamada para API com filtros
-    $.ajax({
-        url: '/api/transacoes',
-        method: 'GET',
-        data: filters,
-        success: function(response) {
-            displaySmartSummary(response.data || response.transacoes || []);
-        },
-        error: function(xhr, status, error) {
-            console.error('❌ Erro ao carregar resumo:', error);
-            displaySmartSummary([]);
-        }
-    });
-}
+// ==========================================
+// FILTROS DE DATA RÁPIDOS
+// ==========================================
 
-function getSmartFilters() {
-    // Obter status de pagamento selecionados dos botões
-    const selectedPaymentStatuses = typeof getSelectedPaymentStatuses === 'function' 
-        ? getSelectedPaymentStatuses() 
-        : [];
+window.aplicarFiltroData = function() {
+    console.log('📅 Aplicando filtros de data personalizados...');
     
-    const filters = {
-        // Filtros de tipo
-        tipo: $('#smartTipoFilter').val(),
-        status_negociacao: $('#smartStatusNegociacaoFilter').val(),
+    const dataInicio = document.getElementById('filtro-rapido-data-inicio').value;
+    const dataFim = document.getElementById('filtro-rapido-data-fim').value;
+    
+    // Atualizar estado dos filtros
+    TransacoesApp.state.filtros.data_inicio = dataInicio;
+    TransacoesApp.state.filtros.data_fim = dataFim;
+    
+    // Se datas foram preenchidas, CANCELAR período predefinido
+    if (dataInicio || dataFim) {
+        console.log('🔄 Período personalizado ativado - cancelando períodos predefinidos');
         
-        // Filtros de data
-        data_vencimento_inicio: $('#smartDataInicio').val(),
-        data_vencimento_fim: $('#smartDataFim').val(),
+        // Limpar período predefinido
+        TransacoesApp.state.filtros.periodo = '';
         
-        // Filtros de valor
-        valor_min: $('#smartValorMin').val(),
-        valor_max: $('#smartValorMax').val(),
-        
-        // Filtro de tipologia (via join com centros_custo)
-        tipologia: $('#smartTipologiaFilter').val(),
-        
-        // Filtros de entidades
-        empresa_id: $('#smartEmpresaFilter').val(),
-        centro_custo_id: $('#smartCentroCustoFilter').val(),
-        plano_financeiro_id: $('#smartPlanoFinanceiroFilter').val(),
-        
-        // Parâmetros para API
-        page: 1,
-        per_page: 10000 // Pegar todos para o resumo
-    };
-    
-    // Adicionar filtros de status de pagamento
-    if (selectedPaymentStatuses.length > 0) {
-        // Se apenas um status selecionado, usar view_type correspondente (mais eficiente)
-        if (selectedPaymentStatuses.length === 1) {
-            const status = selectedPaymentStatuses[0];
-            switch(status) {
-                case 'realizado':
-                    filters.view_type = 'consolidado';
-                    break;
-                case 'a-realizar':
-                    filters.view_type = 'previsao';
-                    break;
-                case 'atrasado':
-                    filters.view_type = 'atrasado';
-                    break;
-            }
-            console.log(`🔍 Filtro único de status aplicado: view_type=${filters.view_type}`);
-        } else {
-            // Para múltiplos status, NÃO aplicar view_type para pegar todas as transações
-            // A filtragem será feita no frontend na função displaySmartSummary
-            console.log(`🔍 Múltiplos status selecionados: ${selectedPaymentStatuses.join(', ')} - filtragem no frontend`);
-        }
-    }
-    
-    // Remover filtros vazios
-    Object.keys(filters).forEach(key => {
-        if (filters[key] === '' || filters[key] === null || filters[key] === undefined) {
-            delete filters[key];
-        }
-    });
-    
-    console.log('📋 Filtros coletados:', filters);
-    
-    return filters;
-}
-
-function displaySmartSummary(transacoes) {
-    console.log(`📊 Exibindo resumo de ${transacoes.length} transações`);
-    
-    // Filtrar no frontend baseado nos status selecionados
-    let filteredTransacoes = transacoes;
-    const selectedPaymentStatuses = typeof getSelectedPaymentStatuses === 'function' 
-        ? getSelectedPaymentStatuses() 
-        : [];
-    
-    // Se status específicos estão selecionados (não "todos"), aplicar filtro
-    if (selectedPaymentStatuses.length > 0) {
-        const hoje = new Date();
-        
-        filteredTransacoes = transacoes.filter(t => {
-            // Calcular status dinâmico da transação
-            let statusCalculado = '';
-            
-            if (t.status_pagamento === 'Realizado') {
-                statusCalculado = 'realizado';
-            } else {
-                const vencimento = new Date(t.data_vencimento);
-                if (vencimento < hoje) {
-                    statusCalculado = 'atrasado';
-                } else {
-                    statusCalculado = 'a-realizar';
-                }
-            }
-            
-            // Incluir se o status calculado está na lista selecionada
-            const isIncluded = selectedPaymentStatuses.includes(statusCalculado);
-            
-            // Log apenas alguns exemplos para não poluir o console
-            if (isIncluded && Math.random() < 0.05) { // 5% das transações incluídas
-                console.log(`✅ Exemplo incluído: ${t.titulo?.substring(0, 30)}... - Status: ${statusCalculado} - Vencimento: ${t.data_vencimento}`);
-            }
-            
-            return isIncluded;
+        // Remover active de TODOS os botões de período predefinido
+        document.querySelectorAll('[data-filtro="periodo"]').forEach(btn => {
+            btn.classList.remove('active');
         });
         
-        console.log(`🔍 Filtro aplicado no frontend:`);
-        console.log(`   Status selecionados: ${selectedPaymentStatuses.join(', ')}`);
-        console.log(`   Resultado: ${filteredTransacoes.length} de ${transacoes.length} transações`);
-        
-        // Breakdown por status
-        const breakdown = {};
-        selectedPaymentStatuses.forEach(status => {
-            breakdown[status] = filteredTransacoes.filter(t => {
-                if (t.status_pagamento === 'Realizado') return status === 'realizado';
-                const vencimento = new Date(t.data_vencimento);
-                const hoje = new Date();
-                if (vencimento < hoje) return status === 'atrasado';
-                return status === 'a-realizar';
-            }).length;
-        });
-        console.log(`   Breakdown:`, breakdown);
+        // Ativar apenas o botão "Todos" para indicar período personalizado
+        const btnTodos = document.querySelector('[data-filtro="periodo"][data-valor="todos"]');
+        if (btnTodos) {
+            btnTodos.classList.add('active');
+        }
+    } else {
+        // Se nenhuma data foi preenchida, voltar ao período "todos"
+        console.log('🔄 Datas vazias - voltando ao período padrão');
+        TransacoesApp.state.filtros.periodo = 'todos';
     }
     
-    // Calcular métricas
-    const metrics = calculateMetrics(filteredTransacoes);
+    // Recarregar dados
+    carregarDados();
     
-    // Atualizar elementos no DOM
-    $('#filteredEntradas').text(formatCurrency(metrics.entradas));
-    $('#filteredSaidas').text(formatCurrency(metrics.saidas));
-    $('#filteredSaldo').text(formatCurrency(metrics.saldo));
-    $('#filteredMedia').text(formatCurrency(metrics.media));
-    
-    // Atualizar contadores
-    $('#countEntradas').text(`${metrics.countEntradas} transações`);
-    $('#countSaidas').text(`${metrics.countSaidas} transações`);
-    $('#totalFiltered').text(`${metrics.total} transações`);
-    
-    // Atualizar período
-    const periodo = getPeriodDisplay();
-    $('#filteredPeriod').text(periodo);
-    
-    // Atualizar cores baseado no saldo
-    const saldoElement = $('#filteredSaldo');
-    saldoElement.removeClass('text-success text-danger');
-    if (metrics.saldo > 0) {
-        saldoElement.addClass('text-success');
-    } else if (metrics.saldo < 0) {
-        saldoElement.addClass('text-danger');
-    }
-}
+    console.log('✅ Filtros de data aplicados:', { 
+        dataInicio, 
+        dataFim, 
+        periodo: TransacoesApp.state.filtros.periodo 
+    });
+};
 
-function calculateMetrics(transacoes) {
-    let entradas = 0, saidas = 0;
-    let countEntradas = 0, countSaidas = 0;
+// ==========================================
+// BUSCA DE FORNECEDORES
+// ==========================================
+
+let fornecedorSearchTimeout = null;
+let fornecedorSelectedIndex = -1;
+
+window.limparFornecedorSelecionado = function() {
+    document.getElementById('filtro-fornecedor-busca').value = '';
+    document.getElementById('filtro-fornecedor-selected-id').value = '';
+    document.getElementById('fornecedor-selected').style.display = 'none';
+    document.getElementById('filtro-fornecedor-busca').style.display = 'block';
+    document.getElementById('fornecedor-search-results').style.display = 'none';
     
-    transacoes.forEach(transacao => {
-        const valor = parseFloat(transacao.valor) || 0;
+    // Atualizar filtros
+    TransacoesApp.state.filtros.fornecedor_id = '';
+    carregarDados();
+};
+
+function setupFornecedorSearch() {
+    const searchInput = document.getElementById('filtro-fornecedor-busca');
+    const resultsContainer = document.getElementById('fornecedor-search-results');
+    
+    if (!searchInput) return;
+    
+    // Event listeners
+    searchInput.addEventListener('input', function() {
+        const termo = this.value.trim();
         
-        if (transacao.tipo === 'Receita') {
-            entradas += valor;
-            countEntradas++;
-        } else if (transacao.tipo === 'Despesa') {
-            saidas += valor;
-            countSaidas++;
+        // Debounce
+        clearTimeout(fornecedorSearchTimeout);
+        fornecedorSearchTimeout = setTimeout(() => {
+            buscarFornecedores(termo);
+        }, 300);
+    });
+    
+    searchInput.addEventListener('keydown', function(e) {
+        const items = resultsContainer.querySelectorAll('.fornecedor-search-item');
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            fornecedorSelectedIndex = Math.min(fornecedorSelectedIndex + 1, items.length - 1);
+            highlightFornecedorItem(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            fornecedorSelectedIndex = Math.max(fornecedorSelectedIndex - 1, -1);
+            highlightFornecedorItem(items);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (fornecedorSelectedIndex >= 0 && items[fornecedorSelectedIndex]) {
+                items[fornecedorSelectedIndex].click();
+            }
+        } else if (e.key === 'Escape') {
+            resultsContainer.style.display = 'none';
+            fornecedorSelectedIndex = -1;
         }
     });
     
-    const saldo = entradas - saidas;
-    const total = transacoes.length;
-    const media = total > 0 ? (entradas + saidas) / total : 0;
-    
-    return {
-        entradas,
-        saidas,
-        saldo,
-        media,
-        countEntradas,
-        countSaidas,
-        total
-    };
-}
-
-function getPeriodDisplay() {
-    const inicio = $('#smartDataInicio').val();
-    const fim = $('#smartDataFim').val();
-    
-    if (!inicio && !fim) {
-        return 'Período: Todos';
-    }
-    
-    const inicioFormatado = inicio ? formatDateBR(inicio) : 'Início';
-    const fimFormatado = fim ? formatDateBR(fim) : 'Fim';
-    
-    return `${inicioFormatado} a ${fimFormatado}`;
-}
-
-function clearSmartFilters() {
-    console.log('🧹 Limpando filtros inteligentes...');
-    
-    // Limpar todos os selects
-    $('#smartTipoFilter, #smartStatusNegociacaoFilter, #smartStatusPagamentoFilter, #smartTipologiaFilter').val('');
-    
-    // Resetar datas para padrão
-    $('#smartDataInicio').val('2023-01-01');
-    $('#smartDataFim').val('2024-12-31');
-    
-    // Limpar valores
-    $('#smartValorMin, #smartValorMax').val('');
-    
-    // Remover estados ativos
-    $('.date-quick-btn, .value-quick-btn').removeClass('active');
-    $('.date-quick-btn[data-period="tudo"]').addClass('active');
-    
-    // Atualizar resumo
-    updateSmartSummary();
-    
-    showNotification('Filtros inteligentes limpos', 'success');
-}
-
-function applySmartFilters() {
-    console.log('🎯 Aplicando filtros inteligentes à tabela principal...');
-    
-    try {
-        // Copiar filtros do Smart Header para os filtros principais
-        $('#tipoFilter').val($('#smartTipoFilter').val());
-        $('#statusNegociacaoFilter').val($('#smartStatusNegociacaoFilter').val());
-        $('#statusPagamentoFilter').val($('#smartStatusPagamentoFilter').val());
-        $('#dataVencimentoInicio').val($('#smartDataInicio').val());
-        $('#dataVencimentoFim').val($('#smartDataFim').val());
-        
-        // Aplicar filtros à listagem principal
-        if (typeof applyFilters === 'function') {
-            applyFilters();
-        } else {
-            loadTransacoes(); // Fallback
-        }
-        
-        showNotification('Filtros aplicados à listagem principal', 'success');
-    } catch (error) {
-        console.error('Erro ao aplicar filtros:', error);
-        showNotification('Erro ao aplicar filtros', 'error');
-    }
-}
-
-// ====================================
-// VIEW TOGGLE FUNCTIONS (Previsão/Consolidado/Atrasado)
-// ====================================
-
-function switchViewType(viewType) {
-    console.log(`🔄 Mudando para view type: ${viewType}`);
-    
-    currentViewType = viewType;
-    
-    // Update buttons
-    $('.view-toggle-btn').removeClass('active');
-    $(`.view-toggle-btn[data-view="${viewType}"]`).addClass('active');
-    
-    // Update current filters with view type
-    currentFilters.view_type = viewType;
-    
-    // Reload data with new view type
-    loadTransacoes();
-    
-    // Update metrics for this view
-    loadViewMetrics(viewType);
-    
-    showNotification(`Visualização alterada para: ${getViewTypeLabel(viewType)}`, 'info');
-}
-
-function getViewTypeLabel(viewType) {
-    switch(viewType) {
-        case 'previsao': return 'Previsão';
-        case 'consolidado': return 'Consolidado';
-        case 'atrasado': return 'Atrasado';
-        default: return 'Previsão';
-    }
-}
-
-function loadViewCounts() {
-    console.log('📊 Carregando contadores do view toggle...');
-    
-    $.ajax({
-        url: '/api/transacoes/view-counts',
-        method: 'GET',
-        success: function(data) {
-            console.log('✅ Contadores carregados:', data);
-            updateViewCounts(data);
-        },
-        error: function(xhr, status, error) {
-            console.error('❌ Erro ao carregar contadores:', error);
-            // Fallback counts
-            updateViewCounts({
-                previsao: 0,
-                consolidado: 0,
-                atrasado: 0
-            });
+    // Fechar resultados ao clicar fora
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.fornecedor-search-container')) {
+            resultsContainer.style.display = 'none';
+            fornecedorSelectedIndex = -1;
         }
     });
 }
 
-function updateViewCounts(counts) {
-    $('#previsaoCount').text(counts.previsao || 0);
-    $('#consolidadoCount').text(counts.consolidado || 0);
-    $('#atrasadoCount').text(counts.atrasado || 0);
-}
-
-function loadViewMetrics(viewType) {
-    console.log(`📊 Carregando métricas para view: ${viewType}`);
+async function buscarFornecedores(termo) {
+    const resultsContainer = document.getElementById('fornecedor-search-results');
+    const tipoFiltro = document.getElementById('filtro-fornecedor-tipo').value;
     
-    $.ajax({
-        url: `/api/transacoes/view-metrics/${viewType}`,
-        method: 'GET',
-        success: function(data) {
-            console.log('✅ Métricas carregadas:', data);
-            updateFinancialHeaderByView(data, viewType);
-        },
-        error: function(xhr, status, error) {
-            console.error('❌ Erro ao carregar métricas:', error);
-        }
-    });
-}
-
-function updateFinancialHeaderByView(data, viewType) {
-    // Update KPIs based on view type
-    $('#filteredEntradas').text(formatCurrency(data.receitas || 0));
-    $('#filteredSaidas').text(formatCurrency(data.despesas || 0));
-    $('#filteredSaldo').text(formatCurrency(data.saldo || 0));
-    $('#filteredMedia').text(formatCurrency(data.valor_medio || 0));
-    
-    // Update counts
-    $('#countEntradas').text(`${data.count_receitas || 0} transações`);
-    $('#countSaidas').text(`${data.count_despesas || 0} transações`);
-    $('#totalFiltered').text(`${data.total_transacoes || 0} transações`);
-    
-    // Update period display
-    $('#filteredPeriod').text(`${getViewTypeLabel(viewType)} - Período filtrado`);
-    
-    // Update saldo color
-    const saldoElement = $('#filteredSaldo');
-    saldoElement.removeClass('text-success text-danger');
-    if (data.saldo > 0) {
-        saldoElement.addClass('text-success');
-    } else if (data.saldo < 0) {
-        saldoElement.addClass('text-danger');
-    }
-}
-
-// ====================================
-// DATE SLIDER FUNCTIONS
-// ====================================
-
-function setupDateSlider() {
-    console.log('📅 Configurando date slider...');
-    
-    const startSlider = document.getElementById('dateSliderStart');
-    const endSlider = document.getElementById('dateSliderEnd');
-    const rangeDisplay = document.getElementById('dateSliderRange');
-    const dateDisplay = document.getElementById('dateRangeDisplay');
-    
-    if (!startSlider || !endSlider) {
-        console.warn('⚠️ Date slider elements not found');
+    if (!termo || termo.length < 2) {
+        resultsContainer.style.display = 'none';
         return;
     }
     
-    // Initialize slider values
-    updateDateSliderDisplay();
-    
-    // Event listeners
-    startSlider.addEventListener('input', function() {
-        if (parseInt(this.value) >= parseInt(endSlider.value)) {
-            this.value = parseInt(endSlider.value) - 1;
-        }
-        updateDateSliderDisplay();
-        updateDateSliderRange();
-    });
-    
-    endSlider.addEventListener('input', function() {
-        if (parseInt(this.value) <= parseInt(startSlider.value)) {
-            this.value = parseInt(startSlider.value) + 1;
-        }
-        updateDateSliderDisplay();
-        updateDateSliderRange();
-    });
-    
-    // Preset buttons
-    $('.date-preset-btn').on('click', function() {
-        const preset = $(this).data('preset');
-        setDatePreset(preset);
-    });
-}
-
-function updateDateSliderDisplay() {
-    const startVal = parseInt(document.getElementById('dateSliderStart').value);
-    const endVal = parseInt(document.getElementById('dateSliderEnd').value);
-    
-    // Convert slider values to dates (0 = Jan 2023, 730 = Dec 2024)
-    const startDate = new Date(2023, 0, 1);
-    startDate.setDate(startDate.getDate() + startVal);
-    
-    const endDate = new Date(2023, 0, 1);
-    endDate.setDate(endDate.getDate() + endVal);
-    
-    // Update display
-    const startStr = startDate.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
-    const endStr = endDate.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
-    
-    document.getElementById('dateRangeDisplay').textContent = `${startStr} - ${endStr}`;
-    
-    // Update hidden inputs for compatibility
-    document.getElementById('smartDataInicio').value = startDate.toISOString().split('T')[0];
-    document.getElementById('smartDataFim').value = endDate.toISOString().split('T')[0];
-}
-
-function updateDateSliderRange() {
-    const startVal = parseInt(document.getElementById('dateSliderStart').value);
-    const endVal = parseInt(document.getElementById('dateSliderEnd').value);
-    const range = document.getElementById('dateSliderRange');
-    
-    const percentStart = (startVal / 730) * 100;
-    const percentEnd = (endVal / 730) * 100;
-    
-    range.style.left = percentStart + '%';
-    range.style.width = (percentEnd - percentStart) + '%';
-    
-    // Trigger filter update
-    debounce(updateSmartSummary, 300)();
-}
-
-function setDatePreset(preset) {
-    console.log(`📅 Aplicando preset de data: ${preset}`);
-    
-    const startSlider = document.getElementById('dateSliderStart');
-    const endSlider = document.getElementById('dateSliderEnd');
-    
-    let startVal, endVal;
-    
-    switch(preset) {
-        case 'mes-atual':
-            // Current month
-            const hoje = new Date();
-            const mesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-            const diffMesAtual = Math.floor((mesAtual - new Date(2023, 0, 1)) / (1000 * 60 * 60 * 24));
-            startVal = Math.max(0, diffMesAtual);
-            endVal = Math.min(730, diffMesAtual + 30);
-            break;
-            
-        case 'trimestre':
-            // Current quarter
-            const trimestre = new Date();
-            const quarter = Math.floor(trimestre.getMonth() / 3);
-            const trimestreInicio = new Date(trimestre.getFullYear(), quarter * 3, 1);
-            const diffTrimestre = Math.floor((trimestreInicio - new Date(2023, 0, 1)) / (1000 * 60 * 60 * 24));
-            startVal = Math.max(0, diffTrimestre);
-            endVal = Math.min(730, diffTrimestre + 90);
-            break;
-            
-        case 'ano-atual':
-            // 2024
-            const ano2024 = new Date(2024, 0, 1);
-            const diffAno = Math.floor((ano2024 - new Date(2023, 0, 1)) / (1000 * 60 * 60 * 24));
-            startVal = diffAno;
-            endVal = 730;
-            break;
-            
-        case 'tudo':
-        default:
-            startVal = 0;
-            endVal = 730;
-            break;
-    }
-    
-    startSlider.value = startVal;
-    endSlider.value = endVal;
-    
-    updateDateSliderDisplay();
-    updateDateSliderRange();
-    
-    // Update preset button active state
-    $('.date-preset-btn').removeClass('active');
-    $(`.date-preset-btn[data-preset="${preset}"]`).addClass('active');
-}
-
-// Tornar as funções globalmente disponíveis
-window.applySmartFilters = applySmartFilters;
-window.clearSmartFilters = clearSmartFilters;
-window.switchViewType = switchViewType;
-
-function saveFilterPreset() {
-    const filters = getSmartFilters();
-    const presetName = prompt('Nome do preset de filtros:');
-    
-    if (presetName) {
-        // Salvar no localStorage
-        const presets = JSON.parse(localStorage.getItem('transacoes_filter_presets') || '{}');
-        presets[presetName] = filters;
-        localStorage.setItem('transacoes_filter_presets', JSON.stringify(presets));
+    try {
+        // Mostrar loading
+        resultsContainer.innerHTML = '<div class="fornecedor-search-loading">🔍 Buscando...</div>';
+        resultsContainer.style.display = 'block';
         
-        showNotification(`Preset "${presetName}" salvo com sucesso`, 'success');
+        const response = await fetch('/api/fornecedores/buscar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                termo: termo,
+                tipo: tipoFiltro,
+                limite: 20
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        renderizarResultadosFornecedores(data.fornecedores);
+        
+    } catch (error) {
+        console.error('Erro na busca de fornecedores:', error);
+        resultsContainer.innerHTML = '<div class="fornecedor-search-empty">❌ Erro na busca</div>';
     }
 }
 
-// Utility functions
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
+function renderizarResultadosFornecedores(fornecedores) {
+    const resultsContainer = document.getElementById('fornecedor-search-results');
+    
+    if (fornecedores.length === 0) {
+        resultsContainer.innerHTML = '<div class="fornecedor-search-empty">🔍 Nenhum fornecedor encontrado</div>';
+        return;
+    }
+    
+    const html = fornecedores.map(fornecedor => `
+        <div class="fornecedor-search-item" onclick="selecionarFornecedor(${fornecedor.id}, '${fornecedor.nome.replace(/'/g, "\\'")}')">
+            <div class="fornecedor-item-name">${escapeHtml(fornecedor.nome)}</div>
+            <div class="fornecedor-item-details">
+                <span class="fornecedor-item-tipo">${fornecedor.tipo}</span>
+                <span class="fornecedor-item-stats">
+                    ${fornecedor.total_transacoes} transações | ${formatCurrency(fornecedor.valor_movimentado)}
+                </span>
+            </div>
+        </div>
+    `).join('');
+    
+    resultsContainer.innerHTML = html;
+    fornecedorSelectedIndex = -1;
 }
 
-function formatDateBR(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString + 'T00:00:00');
-    return date.toLocaleDateString('pt-BR');
+function highlightFornecedorItem(items) {
+    items.forEach((item, index) => {
+        if (index === fornecedorSelectedIndex) {
+            item.classList.add('highlighted');
+        } else {
+            item.classList.remove('highlighted');
+        }
+    });
 }
+
+window.selecionarFornecedor = function(id, nome) {
+    // Atualizar interface
+    document.getElementById('filtro-fornecedor-busca').style.display = 'none';
+    document.getElementById('fornecedor-search-results').style.display = 'none';
+    
+    const selectedContainer = document.getElementById('fornecedor-selected');
+    const selectedName = selectedContainer.querySelector('.fornecedor-selected-name');
+    
+    selectedName.textContent = nome;
+    selectedContainer.style.display = 'flex';
+    
+    // Atualizar estado
+    document.getElementById('filtro-fornecedor-selected-id').value = id;
+    TransacoesApp.state.filtros.fornecedor_id = id;
+    
+    // Recarregar dados
+    carregarDados();
+    
+    console.log('✅ Fornecedor selecionado:', { id, nome });
+};
+
+// ==========================================
+// INICIALIZAÇÃO DOS MULTISELECTS
+// ==========================================
+
+function initializeMultiselects() {
+    // Multiselect de Empresas
+    TransacoesApp.multiselects.empresas = new MultiSelect('multiselect-empresas', {
+        placeholder: 'Selecione empresas...',
+        searchPlaceholder: 'Buscar empresa...',
+        maxTags: 3,
+        onSelectionChange: (selectedValues) => {
+            console.log('📊 Empresas selecionadas:', selectedValues);
+            TransacoesApp.state.filtros.empresas_ids = selectedValues;
+            carregarDados();
+        }
+    });
+    
+    // Multiselect de Centros de Custo
+    TransacoesApp.multiselects.centros = new MultiSelect('multiselect-centros', {
+        placeholder: 'Selecione centros de custo...',
+        searchPlaceholder: 'Buscar centro...',
+        maxTags: 3,
+        onSelectionChange: (selectedValues) => {
+            console.log('🏢 Centros selecionados:', selectedValues);
+            TransacoesApp.state.filtros.centros_nomes = selectedValues;
+            carregarDados();
+        }
+    });
+    
+    // Carregar dados iniciais dos multiselects
+    carregarDadosMultiselects();
+}
+
+async function carregarDadosMultiselects() {
+    try {
+        // Carregar empresas
+        if (TransacoesApp.state.filtrosDisponiveis.entidades?.empresas) {
+            const empresasData = TransacoesApp.state.filtrosDisponiveis.entidades.empresas
+                .filter(e => e.value !== '') // Remove "Todas as empresas"
+                .map(e => ({
+                    value: String(e.value), // Garantir que value seja string
+                    label: e.label,
+                    count: null
+                }));
+            
+            console.log('🏢 DEBUG: Dados das empresas para multiselect:', empresasData);
+            TransacoesApp.multiselects.empresas.setData(empresasData);
+        }
+        
+        // Carregar centros de custo
+        const response = await fetch('/api/centros-custo/detalhes', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const centrosData = data.centros.map(c => ({
+                value: c.nome,
+                label: c.label,
+                count: c.total_transacoes,
+                tipologia: c.tipologia,
+                empresas: c.empresas
+            }));
+            
+            TransacoesApp.multiselects.centros.setData(centrosData);
+        }
+        
+        console.log('✅ Dados dos multiselects carregados');
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar dados dos multiselects:', error);
+    }
+}
+
+// ==========================================
+// CLASSE MULTISELECT REUTILIZÁVEL
+// ==========================================
+
+class MultiSelect {
+    constructor(container, options = {}) {
+        this.container = typeof container === 'string' ? document.getElementById(container) : container;
+        this.options = {
+            placeholder: 'Selecione opções...',
+            searchPlaceholder: 'Buscar...',
+            allowSearch: true,
+            maxTags: 5,
+            maxHeight: 300,
+            onSelectionChange: null,
+            ...options
+        };
+        
+        this.data = [];
+        this.selectedValues = new Set();
+        this.isOpen = false;
+        this.searchTerm = '';
+        
+        this.init();
+    }
+    
+    init() {
+        this.container.innerHTML = this.createHTML();
+        this.bindEvents();
+    }
+    
+    createHTML() {
+        return `
+            <div class="multiselect-container" tabindex="0">
+                <div class="multiselect-toggle">
+                    <div class="multiselect-selected">
+                        <span class="multiselect-placeholder">${this.options.placeholder}</span>
+                    </div>
+                    <span class="multiselect-arrow">▼</span>
+                </div>
+                <div class="multiselect-dropdown">
+                    ${this.options.allowSearch ? `
+                        <div class="multiselect-search">
+                            <input type="text" placeholder="${this.options.searchPlaceholder}">
+                        </div>
+                    ` : ''}
+                    <div class="multiselect-options"></div>
+                    <div class="multiselect-actions">
+                        <button type="button" class="multiselect-action-btn" data-action="select-all">Todos</button>
+                        <button type="button" class="multiselect-action-btn" data-action="clear-all">Limpar</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    bindEvents() {
+        const toggle = this.container.querySelector('.multiselect-toggle');
+        const dropdown = this.container.querySelector('.multiselect-dropdown');
+        const searchInput = this.container.querySelector('.multiselect-search input');
+        const actionsContainer = this.container.querySelector('.multiselect-actions');
+        
+        // Toggle dropdown
+        toggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.toggle();
+        });
+        
+        // Search
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.searchTerm = e.target.value;
+                this.renderOptions();
+            });
+        }
+        
+        // Actions
+        actionsContainer.addEventListener('click', (e) => {
+            if (e.target.dataset.action === 'select-all') {
+                this.selectAll();
+            } else if (e.target.dataset.action === 'clear-all') {
+                this.clearAll();
+            }
+        });
+        
+        // Close on outside click
+        document.addEventListener('click', (e) => {
+            if (!this.container.contains(e.target)) {
+                this.close();
+            }
+        });
+        
+        // Keyboard navigation
+        this.container.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.close();
+            }
+        });
+    }
+    
+    setData(data) {
+        console.log('📊 SetData recebido:', data);
+        this.data = data.map(item => ({
+            value: String(item.value || item.id), // Garantir string
+            label: item.label || item.name,
+            count: item.count || null,
+            ...item
+        }));
+        console.log('📊 Data processado:', this.data);
+        this.renderOptions();
+    }
+    
+    toggle() {
+        this.isOpen ? this.close() : this.open();
+    }
+    
+    open() {
+        this.isOpen = true;
+        this.container.querySelector('.multiselect-container').classList.add('open');
+        
+        // Focus search if available
+        const searchInput = this.container.querySelector('.multiselect-search input');
+        if (searchInput) {
+            setTimeout(() => searchInput.focus(), 100);
+        }
+    }
+    
+    close() {
+        this.isOpen = false;
+        this.container.querySelector('.multiselect-container').classList.remove('open');
+    }
+    
+    renderOptions() {
+        const optionsContainer = this.container.querySelector('.multiselect-options');
+        
+        // Filter data based on search
+        const filteredData = this.data.filter(item =>
+            item.label.toLowerCase().includes(this.searchTerm.toLowerCase())
+        );
+        
+        if (filteredData.length === 0) {
+            optionsContainer.innerHTML = '<div class="multiselect-empty">Nenhum item encontrado</div>';
+            return;
+        }
+        
+        const html = filteredData.map(item => {
+            const isSelected = this.selectedValues.has(item.value);
+            return `
+                <div class="multiselect-option ${isSelected ? 'selected' : ''}" data-value="${item.value}">
+                    <div class="multiselect-checkbox ${isSelected ? 'checked' : ''}"></div>
+                    <span class="multiselect-option-text" title="${item.label}">${item.label}</span>
+                    ${item.count !== null ? `<span class="multiselect-option-count">${item.count}</span>` : ''}
+                </div>
+            `;
+        }).join('');
+        
+        optionsContainer.innerHTML = html;
+        
+        // Remove event listeners anteriores para evitar duplicação
+        const existingHandler = optionsContainer.onclick;
+        if (existingHandler) {
+            optionsContainer.removeEventListener('click', existingHandler);
+        }
+        
+        // Bind option clicks - usar arrow function para manter contexto
+        const handleOptionClick = (e) => {
+            const option = e.target.closest('.multiselect-option');
+            if (option) {
+                const value = option.dataset.value;
+                console.log('🎯 Clicou na opção:', value, option.textContent.trim());
+                this.toggleOption(value);
+            }
+        };
+        
+        optionsContainer.addEventListener('click', handleOptionClick);
+        optionsContainer.onclick = handleOptionClick; // Guardar referência para remoção
+    }
+    
+    toggleOption(value) {
+        console.log('🔄 Toggle option:', value, 'Current selected:', Array.from(this.selectedValues));
+        
+        if (this.selectedValues.has(value)) {
+            console.log('❌ Removendo:', value);
+            this.selectedValues.delete(value);
+        } else {
+            console.log('✅ Adicionando:', value);
+            this.selectedValues.add(value);
+        }
+        
+        console.log('📋 Após toggle:', Array.from(this.selectedValues));
+        
+        this.updateDisplay();
+        this.renderOptions(); // Re-render to update checkboxes
+        
+        if (this.options.onSelectionChange) {
+            this.options.onSelectionChange(this.getSelectedValues());
+        }
+    }
+    
+    selectAll() {
+        const filteredData = this.data.filter(item =>
+            item.label.toLowerCase().includes(this.searchTerm.toLowerCase())
+        );
+        
+        filteredData.forEach(item => {
+            this.selectedValues.add(item.value);
+        });
+        
+        this.updateDisplay();
+        this.renderOptions();
+        
+        if (this.options.onSelectionChange) {
+            this.options.onSelectionChange(this.getSelectedValues());
+        }
+    }
+    
+    clearAll() {
+        this.selectedValues.clear();
+        this.updateDisplay();
+        this.renderOptions();
+        
+        if (this.options.onSelectionChange) {
+            this.options.onSelectionChange(this.getSelectedValues());
+        }
+    }
+    
+    updateDisplay() {
+        const selectedContainer = this.container.querySelector('.multiselect-selected');
+        
+        if (this.selectedValues.size === 0) {
+            selectedContainer.innerHTML = `<span class="multiselect-placeholder">${this.options.placeholder}</span>`;
+            return;
+        }
+        
+        const selectedItems = Array.from(this.selectedValues).map(value => {
+            const item = this.data.find(d => d.value === value);
+            return item ? item.label : value;
+        });
+        
+        // Show tags or count
+        if (selectedItems.length <= this.options.maxTags) {
+            const tagsHTML = Array.from(this.selectedValues).map(value => {
+                const item = this.data.find(d => d.value === value);
+                const label = item ? item.label : value;
+                return `
+                    <span class="multiselect-tag">
+                        <span class="multiselect-tag-text" title="${label}">${label}</span>
+                        <button type="button" class="multiselect-tag-remove" data-value="${value}">×</button>
+                    </span>
+                `;
+            }).join('');
+            
+            selectedContainer.innerHTML = tagsHTML;
+            
+            // Remove event listeners anteriores
+            const existingHandler = selectedContainer.onclick;
+            if (existingHandler) {
+                selectedContainer.removeEventListener('click', existingHandler);
+            }
+            
+            // Bind remove buttons
+            const handleRemoveClick = (e) => {
+                if (e.target.classList.contains('multiselect-tag-remove')) {
+                    e.stopPropagation();
+                    const value = e.target.dataset.value;
+                    console.log('🗑️ Removendo tag:', value);
+                    this.toggleOption(value);
+                }
+            };
+            
+            selectedContainer.addEventListener('click', handleRemoveClick);
+            selectedContainer.onclick = handleRemoveClick;
+        } else {
+            selectedContainer.innerHTML = `<span class="multiselect-count">${selectedItems.length} itens selecionados</span>`;
+        }
+    }
+    
+    getSelectedValues() {
+        return Array.from(this.selectedValues);
+    }
+    
+    getSelectedItems() {
+        return Array.from(this.selectedValues).map(value => {
+            return this.data.find(item => item.value === value);
+        }).filter(Boolean);
+    }
+    
+    setSelectedValues(values) {
+        this.selectedValues = new Set(values);
+        this.updateDisplay();
+        this.renderOptions();
+    }
+    
+    clearSelection() {
+        this.clearAll();
+    }
+    
+    destroy() {
+        // Clean up event listeners if needed
+        this.container.innerHTML = '';
+    }
+}
+
+// ==========================================
+// EXPOSIÇÃO GLOBAL PARA DEBUG
+// ==========================================
+
+window.TransacoesApp = TransacoesApp;
+window.recarregarDados = carregarDados;
+
+console.log('📚 TransacoesApp v2.0 carregado!');

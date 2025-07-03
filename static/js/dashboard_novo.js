@@ -1,7 +1,14 @@
 // Dashboard JavaScript
 $(document).ready(function() {
     initializeDashboard();
-    initializeCharts();
+    
+    // Só inicializar gráficos se Chart.js estiver disponível
+    if (typeof Chart !== 'undefined') {
+        initializeCharts();
+    } else {
+        console.log('Chart.js não carregado - gráficos desabilitados');
+    }
+    
     setupEventListeners();
 });
 
@@ -150,13 +157,19 @@ function performSearch(searchTerm) {
 }
 
 function initializeCharts() {
+    // Verificar se Chart.js está disponível
+    if (typeof Chart === 'undefined') {
+        console.warn('Chart.js não está carregado. Gráficos não serão exibidos.');
+        return;
+    }
+    
     // Dados de exemplo para os gráficos
     const chartColors = {
-        primary: getComputedStyle(document.documentElement).getPropertyValue('--selleta-primary').trim(),
-        success: getComputedStyle(document.documentElement).getPropertyValue('--selleta-success').trim(),
-        error: getComputedStyle(document.documentElement).getPropertyValue('--selleta-error').trim(),
-        warning: getComputedStyle(document.documentElement).getPropertyValue('--selleta-warning').trim(),
-        info: getComputedStyle(document.documentElement).getPropertyValue('--selleta-info').trim()
+        primary: getComputedStyle(document.documentElement).getPropertyValue('--selleta-primary').trim() || '#1a73e8',
+        success: getComputedStyle(document.documentElement).getPropertyValue('--selleta-success').trim() || '#34a853',
+        error: getComputedStyle(document.documentElement).getPropertyValue('--selleta-error').trim() || '#ea4335',
+        warning: getComputedStyle(document.documentElement).getPropertyValue('--selleta-warning').trim() || '#fbbc04',
+        info: getComputedStyle(document.documentElement).getPropertyValue('--selleta-info').trim() || '#4285f4'
     };
     
     // Fluxo de Caixa

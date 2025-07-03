@@ -231,5 +231,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<!-- Chart.js para gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script src="{{ url_for('static', filename='js/dashboard_novo.js') }}"></script>
 {% endblock %}
